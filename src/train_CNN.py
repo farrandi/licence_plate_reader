@@ -52,14 +52,13 @@ action = input("input action:")
 
 #1: Load the pictures
 if (action == 1):
-    PATH = "/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/pictures/"
+    PATH = "/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/pictures/"
     # command = "ls " + PATH
     # labels_raw = os.system(command)
     labels_raw = os.listdir(PATH)
     labels = labels_raw[0].split()
     print(labels)
 
-    PATH = "/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/pictures/"
     folder_characters = PATH + "characters"
     char_files = files_in_folder(folder_characters)
 
@@ -155,7 +154,7 @@ elif(action == 3):
 # 4: Testing the model
 elif(action == 4):
     #load the plates
-    PATH = "/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/pictures/plates"
+    PATH = "/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/pictures/"
     plate_files = files_in_folder(PATH)
 
     imgset_plates = []
@@ -188,7 +187,7 @@ elif(action == 4):
 
 # 5: save the model
 elif(action == 5):
-    conv_model.save("/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/my_model")
+    conv_model.save("/home/fizzer/ros_ws/src/enph353_robot_controller/my_model")
 
 # 6: reset the model
 elif(action == 6):
