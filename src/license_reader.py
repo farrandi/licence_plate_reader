@@ -18,7 +18,7 @@ class LicenseReader():
     def __init__(self):
 
         self.bridge = CvBridge()
-        self.imageSubscriber = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.findPlate)
+        self.imageSubscriber = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.findandread)
         self.cmdVelPublisher = rospy.Publisher('/license_plate', String, queue_size = 10)
         self.cmdVelRate = rospy.Rate(10)
         self.prevError = 0
@@ -88,6 +88,10 @@ class LicenseReader():
 
     def readPlate(self, homography_im):
         plate = ""
+
+        #resize the homography to: 298 X 600
+        
+
         for index in range(4):
             if (index <2 ):
                 w1 = 30 + (index)*120
@@ -100,6 +104,12 @@ class LicenseReader():
 
         return plate
 
+    def findandread(self,data):
+        status, hom_img = self.findPlate(data)
+            while status:
+                plate = self.readPlate(hom_img)
+                print(plate)
+
 
 def main():
         rospy.init_node("license_read")
@@ -108,10 +118,6 @@ def main():
         
         while not rospy.is_shutdown():
             rate.sleep()
-            status, hom_img = licenseReader.findPlate()
-            while status:
-                plate = licenseReader.readPlate(hom_img)
-                print(plate)
         
 if __name__ == '__main__':
         main()
