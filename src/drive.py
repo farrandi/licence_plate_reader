@@ -9,7 +9,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from time import sleep
 
-class LineFollowing():
+class RobotDrive():
 
     def __init__(self):
 
@@ -161,7 +161,7 @@ class LineFollowing():
 def main():
 
     rospy.init_node("line_follow")
-    lineFollower = LineFollowing()
+    lineFollower = RobotDrive()
     rate = rospy.Rate(10)
     
     while not rospy.is_shutdown():
