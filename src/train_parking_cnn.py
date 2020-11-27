@@ -75,7 +75,7 @@ while action !=-1:
         #load the images and assign labels
         imgset_list =[]
         for file in char_files:
-            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), int(file[3])]
+            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[3]]]
             imgset_list.append(ind_img)
 
         #imgset_list = [[np.array(Image.open('{}/{}'.format(folder_characters, file)), char_to_int[file[6]]] for file in char_files]
@@ -99,7 +99,7 @@ while action !=-1:
 
         # Convert Y dataset to one-hot encoding
         Y_dataset = convert_to_one_hot(Y_dataset_orig, NUMBER_OF_LABELS).T
-        print(Y_dataset[1])
+        print(Y_dataset.shape)
 
         #split the data into training and test samples
         VALIDATION_SPLIT = 0.2
@@ -133,7 +133,7 @@ while action !=-1:
                         metrics=['acc'])
         history_conv = conv_model.fit(X_dataset, Y_dataset, 
                                     validation_split=VALIDATION_SPLIT, 
-                                    epochs=10, 
+                                    epochs=100, 
                                     batch_size=16)
 
     # 3: See training history
