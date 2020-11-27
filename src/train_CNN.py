@@ -50,7 +50,7 @@ def files_in_folder(folder_path):
 action = 0
 
 while action !=-1:
-    action = input("input action:")
+    action = input("Options: \n 1:load images \n 2: train cnn \n 3: see training history \n 4: test \n 5:save \n 6: reset \n -1: terminate \n input action:")
 
     #1: Load the pictures
     if (action == 1):
