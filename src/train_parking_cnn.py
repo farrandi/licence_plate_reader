@@ -61,11 +61,12 @@ while action !=-1:
         labels = labels_raw[0].split()
         print(labels)
 
-        folder_characters = PATH + "characters"
+        folder_characters = PATH + "parking"
         char_files = files_in_folder(folder_characters)
 
         #assign integer encode,  ref: https://machinelearningmastery.com/how-to-one-hot-encode-sequence-data-in-python/
-        ordered_data = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        ordered_data = '123456789'
+
         #define mapping of characters to integers
         char_to_int = dict((c,i) for i,c in enumerate(ordered_data))
         int_to_char = dict((i,c) for i,c in enumerate(ordered_data))
@@ -74,7 +75,7 @@ while action !=-1:
         #load the images and assign labels
         imgset_list =[]
         for file in char_files:
-            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[6]]]
+            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), file[3]]
             imgset_list.append(ind_img)
 
         #imgset_list = [[np.array(Image.open('{}/{}'.format(folder_characters, file)), char_to_int[file[6]]] for file in char_files]
@@ -86,7 +87,7 @@ while action !=-1:
         Y_dataset_orig = np.array([[data[1]] for data in imgset_chars]).T
         print(Y_dataset_orig)
 
-        NUMBER_OF_LABELS = 36
+        NUMBER_OF_LABELS = 9
         CONFIDENCE_THRESHOLD = 0.01
 
         def convert_to_one_hot(Y, C):
@@ -114,15 +115,15 @@ while action !=-1:
         #Defining the model
         conv_model = models.Sequential()
         conv_model.add(layers.Conv2D(32, (3, 3), activation='relu',
-                                    input_shape=(155, 115, 3)))
+                                    input_shape=(200, 100, 3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
-                                    input_shape=(155, 115, 3)))
+                                    input_shape=(200, 100, 3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Flatten())
         conv_model.add(layers.Dropout(0.5))
         conv_model.add(layers.Dense(512, activation='relu'))
-        conv_model.add(layers.Dense(36, activation='softmax'))
+        conv_model.add(layers.Dense(9, activation='softmax'))
         conv_model.summary()
 
         #training the CNN
@@ -132,7 +133,7 @@ while action !=-1:
                         metrics=['acc'])
         history_conv = conv_model.fit(X_dataset, Y_dataset, 
                                     validation_split=VALIDATION_SPLIT, 
-                                    epochs=8, 
+                                    epochs=10, 
                                     batch_size=16)
 
     # 3: See training history
@@ -155,41 +156,11 @@ while action !=-1:
 
     # 4: Testing the model
     elif(action == 4):
-        #load the plates
-        PATH = "/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/pictures/"
-        plate_files = files_in_folder(PATH)
-
-        imgset_plates = []
-        for file in plate_files:
-            ind_plates = cv2.imread('{}/{}'.format(PATH, file))
-            imgset_plates.append(ind_plates)
-        # imgset_plates = np.array([np.array(cv2.imread(f'{PATH}/{file}'))
-        #                     for file in plate_files[:]])
-
-        def displayPlate(index):
-            img = imgset_plates[index]
-            img_aug = np.expand_dims(img, axis=0)
-            plate = ""
-            for index in range(4):
-                if (index <2 ):
-                    w1 = 30 + (index)*120
-                else:
-                    w1 = 330 + (index - 2)*120
-                w2 = w1 + 115
-                cropped_img = img[100:255, w1:w2]  ######################################### error here
-                cropped_img_aug = np.expand_dims(cropped_img, axis=0)
-                y_predict = conv_model.predict(cropped_img_aug)[0]
-                plate = plate + int_to_char[np.argmax(y_predict)].upper()
-
-            print("predicted:" + plate)
-            cv2.imshow("plate_disp", img)
-            
-        n_plate = input("plate:")
-        displayPlate(n_plate)
+       print("code not yet made")
 
     # 5: save the model
     elif(action == 5):
-        conv_model.save("/home/fizzer/ros_ws/src/enph353_robot_controller/my_model")
+        conv_model.save("/home/fizzer/ros_ws/src/enph353_robot_controller/my_parking_reader")
 
     # 6: reset the model
     elif(action == 6):
