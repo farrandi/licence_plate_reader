@@ -75,7 +75,7 @@ while action !=-1:
         #load the images and assign labels
         imgset_list =[]
         for file in char_files:
-            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[3]]]
+            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[4]]]
             imgset_list.append(ind_img)
 
         #imgset_list = [[np.array(Image.open('{}/{}'.format(folder_characters, file)), char_to_int[file[6]]] for file in char_files]
