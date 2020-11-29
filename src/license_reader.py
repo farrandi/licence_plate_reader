@@ -31,27 +31,24 @@ class LicenseReader():
         #load the parking CNN
         self.ordered_data_2 = '123456789'
         self.int_to_park = dict((i,c) for i,c in enumerate(self.ordered_data_2))
-        self.park_mmodel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader")
+        self.park_model = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader")
 
         # set reference.jpg as query image 
-        self.img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
+        # self.img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
 
-        #features
-        self.sift = cv2.xfeatures2d.SIFT_create()
-        self.kp_image, self.desc_image = self.sift.detectAndCompute(self.img,None)
 
         # Feature matching
-        self.index_params = dict(algorithm=0, trees=5)
-        self.search_params = dict()
-        self.flann = cv2.FlannBasedMatcher(self.index_params, self.search_params)
+        # self.index_params = dict(algorithm=0, trees=5)
+        # self.search_params = dict()
+        # self.flann = cv2.FlannBasedMatcher(self.index_params, self.search_params)
 
     # This is the Main read code
-    def findandread(self,data):
+    def findandread(self, data):
         status, hom_img = self.findPlate(data)
-            while status:
-                # plate = self.readPlate(hom_img)
-                # print(plate)
-                print("looping")
+        while status:
+            # plate = self.readPlate(hom_img)
+            # print(plate)
+            print("looping")
 
     #Uses homography to find the plate
     def findPlate(self, data):
@@ -60,13 +57,22 @@ class LicenseReader():
         except CvBridgeError as e:
             print(e)
 
+        img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
+        sift = cv2.xfeatures2d.SIFT_create()
+        kp_image, desc_image = sift.detectAndCompute(img,None)
+        index_params = dict(algorithm=0, trees=5)
+        search_params = dict()
+        flann = cv2.FlannBasedMatcher(index_params, search_params)
+
         # The following code is derived from lab 4
         grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #train image
 
+        cv2.imshow("cameraImage", cameraImage)
         cv2.imshow("grayframe", grayframe)
+        cv2.waitKey(3)
 
-        kp_grayframe, desc_grayframe = self.sift.detectAndCompute(grayframe,None)
-        matches = self.flann.knnMatch(self.desc_image, desc_grayframe, k=2)
+        kp_grayframe, desc_grayframe = sift.detectAndCompute(grayframe,None)
+        matches = flann.knnMatch(desc_image, desc_grayframe, k=2)
         good_points = []
 
         for m,n in matches: #m is query image, n in image in train image
@@ -75,14 +81,14 @@ class LicenseReader():
 
         # Homography
         if len(good_points) > 8:
-            query_pts = np.float32([self.kp_image[m.queryIdx].pt for m in good_points]).reshape(-1,1,2)
+            query_pts = np.float32([kp_image[m.queryIdx].pt for m in good_points]).reshape(-1,1,2)
             train_pts = np.float32([kp_grayframe[m.trainIdx].pt for m in good_points]).reshape(-1,1,2)
 
             matrix, mask = cv2.findHomography(query_pts, train_pts, cv2.RANSAC, 5.0)
             macthes_mask = mask.ravel().tolist()
 
             # perspective transform
-            h,w = self.img.shape
+            h,w = img.shape
             pts = np.float32([[0,0], [0,h], [w,h], [w,0]]).reshape(-1,1,2)
             dst = cv2.perspectiveTransform(pts, matrix)
 
