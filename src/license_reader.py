@@ -35,11 +35,9 @@ class LicenseReader():
 
         # set reference.jpg as query image 
         self.img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
-
         #features
         self.sift = cv2.xfeatures2d.SIFT_create()
         self.kp_image, self.desc_image = self.sift.detectAndCompute(self.img,None)
-
         # Feature matching
         self.index_params = dict(algorithm=0, trees=5)
         self.search_params = dict()
@@ -61,15 +59,15 @@ class LicenseReader():
             print(e)
 
         # The following code is derived from lab 4
-        grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #train image
+        grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #cam image
 
-        cv2.imshow("grayframe", grayframe)
+        cv2.imshow("gray cam im", grayframe)
 
         kp_grayframe, desc_grayframe = self.sift.detectAndCompute(grayframe,None)
         matches = self.flann.knnMatch(self.desc_image, desc_grayframe, k=2)
         good_points = []
 
-        for m,n in matches: #m is query image, n in image in train image
+        for m,n in matches: #m is query image, n in image in cam image
             if m.distance < 0.6*n.distance:
                 good_points.append(m)
 
