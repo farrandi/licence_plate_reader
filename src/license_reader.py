@@ -59,7 +59,7 @@ class LicenseReader():
     #Uses homography to find the plate
     def findPlate(self, cameraImage):
 
-        img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/ref2.jpg', cv2.IMREAD_GRAYSCALE)
         sift = cv2.xfeatures2d.SIFT_create()
         kp_image, desc_image = sift.detectAndCompute(img,None)
         index_params = dict(algorithm=0, trees=5)
