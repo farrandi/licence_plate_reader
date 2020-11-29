@@ -23,21 +23,18 @@ class LicenseReader():
         self.cmdVelRate = rospy.Rate(10)
         self.prevError = 0
 
-        #load the trained CNN from lab 5
-        self.ordered_data = 'abcdefghijklmnopqrstuvwxyz0123456789'
-        self.int_to_char = dict((i,c) for i,c in enumerate(self.ordered_data))
+        #load the trained CNN for reading licence plate
+        self.ordered_data_1 = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        self.int_to_char = dict((i,c) for i,c in enumerate(self.ordered_data_1))
+        self.plate_model = models.load_model("/home/fizzer/ros_ws/src/my_model")
 
-        self.loaded_model = models.load_model("/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/my_model")
+        #load the parking CNN
+        self.ordered_data_2 = '123456789'
+        self.int_to_park = dict((i,c) for i,c in enumerate(self.ordered_data_2))
+        self.park_mmodel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader")
 
-        # self.json_file = open('/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/model.json', 'r')
-        # self.loaded_model_json = self.json_file.read()
-        # self.json_file.close()
-        # self.loaded_model = models.model_from_json(self.loaded_model_json)
-        # self.loaded_model.load_weights("/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/model.h5")
-        # print("Loaded model from disk")
-
-        # set blank+plate.png as query image 
-        self.img = cv2.imread('/home/fizzer/ros_ws/src/2020T1_competition/enph353/enph353_utils/scripts/reader_utils/blank_plate.png', cv2.IMREAD_GRAYSCALE)
+        # set reference.jpg as query image 
+        self.img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
 
         #features
         self.sift = cv2.xfeatures2d.SIFT_create()
@@ -48,6 +45,15 @@ class LicenseReader():
         self.search_params = dict()
         self.flann = cv2.FlannBasedMatcher(self.index_params, self.search_params)
 
+    # This is the Main read code
+    def findandread(self,data):
+        status, hom_img = self.findPlate(data)
+            while status:
+                # plate = self.readPlate(hom_img)
+                # print(plate)
+                print("looping")
+
+    #Uses homography to find the plate
     def findPlate(self, data):
         try:
             cameraImage = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -56,6 +62,9 @@ class LicenseReader():
 
         # The following code is derived from lab 4
         grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #train image
+
+        cv2.imshow("grayframe", grayframe)
+
         kp_grayframe, desc_grayframe = self.sift.detectAndCompute(grayframe,None)
         matches = self.flann.knnMatch(self.desc_image, desc_grayframe, k=2)
         good_points = []
@@ -78,14 +87,16 @@ class LicenseReader():
             dst = cv2.perspectiveTransform(pts, matrix)
 
             homography = cv2.polylines(cameraImage, [np.int32(dst)], True, (255,0,0), 3)
-
-            return True, homography
+            
             cv2.imshow("Homography", homography)
             cv2.waitKey(3)
+            print("homography: FOUND")
+            return True, homography
         else:
             # cv2.imshow("Homography", grayframe)
             return False, cameraImage
 
+    #goes through our CNN to read the parking spot and read plate
     def readPlate(self, homography_im):
         plate = ""
 
@@ -99,16 +110,10 @@ class LicenseReader():
                 w1 = 330 + (index - 2)*120
             w2 = w1 + 115
             cropped_img = homography_im[0:255, w1:w2]
-            y_predict = conv_model.predict(cropped_img)[0]
+            y_predict = self.plate_model.predict(cropped_img)[0]
             plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
 
         return plate
-
-    def findandread(self,data):
-        status, hom_img = self.findPlate(data)
-            while status:
-                plate = self.readPlate(hom_img)
-                print(plate)
 
 
 def main():
