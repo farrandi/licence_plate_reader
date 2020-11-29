@@ -44,18 +44,20 @@ class LicenseReader():
 
     # This is the Main read code
     def findandread(self, data):
-        status, hom_img = self.findPlate(data)
-        while status:
-            # plate = self.readPlate(hom_img)
-            # print(plate)
-            print("looping")
-
-    #Uses homography to find the plate
-    def findPlate(self, data):
         try:
             cameraImage = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print(e)
+
+        status, hom_img = self.findPlate(cameraImage)
+        while status:
+            # plate = self.readPlate(hom_img)
+            # print(plate)
+            print("looping")
+            status = input("type False to stop looping")
+
+    #Uses homography to find the plate
+    def findPlate(self, cameraImage):
 
         img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
         sift = cv2.xfeatures2d.SIFT_create()
@@ -67,10 +69,6 @@ class LicenseReader():
         # The following code is derived from lab 4
         grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #cam image
 
-        cv2.imshow("cameraImage", cameraImage)
-        cv2.imshow("grayframe", grayframe)
-        cv2.waitKey(3)
-
         kp_grayframe, desc_grayframe = sift.detectAndCompute(grayframe,None)
         matches = flann.knnMatch(desc_image, desc_grayframe, k=2)
         good_points = []
@@ -79,8 +77,11 @@ class LicenseReader():
             if m.distance < 0.6*n.distance:
                 good_points.append(m)
 
+        image_match = cv2.drawMatches(img, kp_image, grayframe, kp_grayframe, good_points, grayframe)
+        cv2.imshow("matches", image_match)
+
         # Homography
-        if len(good_points) > 8:
+        if len(good_points) > 5:
             query_pts = np.float32([kp_image[m.queryIdx].pt for m in good_points]).reshape(-1,1,2)
             train_pts = np.float32([kp_grayframe[m.trainIdx].pt for m in good_points]).reshape(-1,1,2)
 
