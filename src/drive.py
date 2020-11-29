@@ -139,7 +139,7 @@ class RobotDrive():
                 self.pid(cX_road, width)
 
             else:
-                if ((cX_ped >= width/2+15 or cX_ped <= width/2-15) and cX_ped > 0):
+                if ((cX_ped >= width/2+7 or cX_ped <= width/2-7) and cX_ped > 0):
                     self.twist.angular.z = 0
                     self.twist.linear.x = 0
                     print("Pedestrian is crossing!")
