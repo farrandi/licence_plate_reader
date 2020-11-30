@@ -70,11 +70,12 @@ class LicenseReader():
         try:
             crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
             final_crop = self.defineEdgesandCrop(crop_mask, cropped_ori)
-            cv2.imshow("cropped", final_crop)
-            # cv2.imshow("cropped mask", crop_mask)
-            cv2.waitKey(3)
+            
+            final_crop = cv2.resize(final_crop, (400,500), interpolation= INTER_NEAREST)
             isitPlate = self.isLicensePlate(final_crop)
             if isitPlate:
+                cv2.imshow("cropped", final_crop)
+                cv2.waitKey(3)
                 return final_crop
 
         except Exception as e:
