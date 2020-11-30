@@ -105,9 +105,8 @@ class LicenseReader():
 
         lics_plate = img [h-110:h, 0:w] #shud result in 110 x 215
         scale = int(330/h)
-            if scale < 645/w:
+        if scale < 645/w:
                 scale = int(645/w)
-
         lics_plate = cv2.resize(lics_plate,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
         for index in range(4):
             if (index <2 ):
