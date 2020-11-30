@@ -44,9 +44,9 @@ class LicenseReader():
 
         if (lic_plate is not None):
             print("run CNN")
-        # while status:
-        #     print("looping")
-        #     status = input("type False to stop looping")
+            pos, plate = self.readPlate(lic_plate)
+            print("in P{}, plate = {}".format(pos, plate))
+
 
     #Uses homography to find the plate
     def findPlate(self, cameraImage):
@@ -70,8 +70,13 @@ class LicenseReader():
         try:
             crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
             final_crop = self.defineEdgesandCrop(crop_mask, cropped_ori)
-            
-            #final_crop = cv2.resize(final_crop, (400,500), interpolation= INTER_NEAREST)
+            h,w,ch = final_crop.shape
+
+            scale = int(350/h)
+            if scale < 215/w:
+                scale = int(215/w)
+
+            final_crop = cv2.resize(final_crop,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
             isitPlate = self.isLicensePlate(final_crop)
             if isitPlate:
                 cv2.imshow("cropped", final_crop)
@@ -87,6 +92,36 @@ class LicenseReader():
 
         return None
 
+    #goes through our CNN to read the parking spot and read plate
+    def readPlate(self, img):
+        plate = ""
+        pos = ""
+
+        h,w,ch = img.shape
+        parking_pic = img[0:200, w-125:w-10] # must be 200 x 100
+        pos_pred = self.park_model.predict(parking_pic)
+        pos = self.int_to_park[np.argmax(pos_pred)]
+
+
+        lics_plate = img [h-110:h, 0:w] #shud result in 110 x 215
+        scale = int(330/h)
+            if scale < 645/w:
+                scale = int(645/w)
+
+        lics_plate = cv2.resize(lics_plate,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
+        for index in range(4):
+            if (index <2 ):
+                w1 = 30 + (index)*120
+            else:
+                w1 = 330 + (index - 2)*120
+            w2 = w1 + 115
+            cropped_img = img[100:255, w1:w2]
+            y_predict = self.plate_model.predict(cropped_img)[0]
+            plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
+
+        return pos, plate
+
+#### helper method
     def isLicensePlate(self, crop_image):
         img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
         sift = cv2.xfeatures2d.SIFT_create()
@@ -116,27 +151,8 @@ class LicenseReader():
 
         return False
 
-    #goes through our CNN to read the parking spot and read plate
-    def readPlate(self, homography_im):
-        plate = ""
-
-        #resize the homography to: 298 X 600
-        
-
-        for index in range(4):
-            if (index <2 ):
-                w1 = 30 + (index)*120
-            else:
-                w1 = 330 + (index - 2)*120
-            w2 = w1 + 115
-            cropped_img = homography_im[0:255, w1:w2]
-            y_predict = self.plate_model.predict(cropped_img)[0]
-            plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
-
-        return plate
-
     def defineEdgesandCrop(self,mask, original):
-        dst = cv2.cornerHarris(mask,25,3,0.04)
+        dst = cv2.cornerHarris(mask,20,3,0.04)
         ret, dst = cv2.threshold(dst,0.1*dst.max(),255,0)
         dst = np.uint8(dst)
         ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
