@@ -42,7 +42,7 @@ class LicenseReader():
 
         lic_plate = self.findPlate(cameraImage)
 
-        while lic_plate == None:
+        if (lic_plate is not None):
             print("run CNN")
         # while status:
         #     print("looping")
@@ -80,14 +80,14 @@ class LicenseReader():
         except Exception as e:
             print("oops")
 
-        cv2.imshow("cam", cameraImage)
-        cv2.waitKey(3)
+        # cv2.imshow("cam", cameraImage)
+        # cv2.waitKey(3)
         # cv2.imshow("mask", maskframe)
 
         return None
 
     def isLicensePlate(self, crop_image):
-        img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/ref2.jpg', cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
         sift = cv2.xfeatures2d.SIFT_create()
         kp_image, desc_image = sift.detectAndCompute(img,None)
         index_params = dict(algorithm=0, trees=5)
@@ -146,7 +146,7 @@ class LicenseReader():
         max_w = 0
         min_h = 1000
         min_w = 1000
-        print(corners.shape)
+        #print(corners.shape)
         corners = corners[1:len(corners),:]
 
         for points in corners:

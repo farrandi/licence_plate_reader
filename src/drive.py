@@ -133,16 +133,18 @@ class RobotDrive():
                 pedestrian_crossing = True if (cX_ped >= left_ped_road and cX_ped <= right_ped_road) else False
             except ValueError:
                 print("No road seen ahead")
-       
             if (cX_crosswalk == -1):
                 # PID ALGORITHM
                 self.pid(cX_road, width)
 
             else:
-                if ((cX_ped >= width/2+7 or cX_ped <= width/2-7) and cX_ped > 0):
-                    self.twist.angular.z = 0
-                    self.twist.linear.x = 0
-                    print("Pedestrian is crossing!")
+                if (pedestrian_crossing):
+                    if ((cX_ped >= width/2+10 or cX_ped <= width/2-10) and cX_ped > 0):
+                        self.twist.angular.z = 0
+                        self.twist.linear.x = 0
+                        print("Pedestrian is crossing!")
+                    else:
+                        self.pid(cX_road, width)
                 else:
                     self.pid(cX_road, width)
 
