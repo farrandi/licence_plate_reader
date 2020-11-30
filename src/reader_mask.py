@@ -40,7 +40,10 @@ class LicenseReader():
         except CvBridgeError as e:
             print(e)
 
-        hom_img = self.findPlate(cameraImage)
+        lic_plate = self.findPlate(cameraImage)
+
+        while lic_plate == None:
+            print("run CNN")
         # while status:
         #     print("looping")
         #     status = input("type False to stop looping")
@@ -70,6 +73,10 @@ class LicenseReader():
             cv2.imshow("cropped", final_crop)
             # cv2.imshow("cropped mask", crop_mask)
             cv2.waitKey(3)
+            isitPlate = self.isLicensePlate(final_crop)
+            if isitPlate:
+                return final_crop
+
         except Exception as e:
             print("oops")
 
@@ -77,7 +84,55 @@ class LicenseReader():
         cv2.waitKey(3)
         # cv2.imshow("mask", maskframe)
 
-        return maskframe
+        return None
+
+    def isLicensePlate(self, crop_image):
+        img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/ref2.jpg', cv2.IMREAD_GRAYSCALE)
+        sift = cv2.xfeatures2d.SIFT_create()
+        kp_image, desc_image = sift.detectAndCompute(img,None)
+        index_params = dict(algorithm=0, trees=5)
+        search_params = dict()
+        flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+        # The following code is derived from lab 4
+        grayframe = cv2.cvtColor(crop_image, cv2.COLOR_BGR2GRAY) #cam image
+        
+
+        kp_grayframe, desc_grayframe = sift.detectAndCompute(grayframe,None)
+        matches = flann.knnMatch(desc_image, desc_grayframe, k=2)
+        good_points = []
+
+        for m,n in matches: #m is query image, n in image in cam image
+            if m.distance < 0.6*n.distance:
+                good_points.append(m)
+
+        image_match = cv2.drawMatches(img, kp_image, grayframe, kp_grayframe, good_points, grayframe)
+        cv2.imshow("matches", image_match)
+        cv2.waitKey(3)
+
+        if len(good_points) > 5:
+            return True
+
+        return False
+
+    #goes through our CNN to read the parking spot and read plate
+    def readPlate(self, homography_im):
+        plate = ""
+
+        #resize the homography to: 298 X 600
+        
+
+        for index in range(4):
+            if (index <2 ):
+                w1 = 30 + (index)*120
+            else:
+                w1 = 330 + (index - 2)*120
+            w2 = w1 + 115
+            cropped_img = homography_im[0:255, w1:w2]
+            y_predict = self.plate_model.predict(cropped_img)[0]
+            plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
+
+        return plate
 
     def defineEdgesandCrop(self,mask, original):
         dst = cv2.cornerHarris(mask,25,3,0.04)
@@ -106,26 +161,6 @@ class LicenseReader():
         
         crop = original[min_h-10:max_h+10, min_w-15:max_w+15]
         return crop
-
-    #goes through our CNN to read the parking spot and read plate
-    def readPlate(self, homography_im):
-        plate = ""
-
-        #resize the homography to: 298 X 600
-        
-
-        for index in range(4):
-            if (index <2 ):
-                w1 = 30 + (index)*120
-            else:
-                w1 = 330 + (index - 2)*120
-            w2 = w1 + 115
-            cropped_img = homography_im[0:255, w1:w2]
-            y_predict = self.plate_model.predict(cropped_img)[0]
-            plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
-
-        return plate
-
 
 def main():
         rospy.init_node("license_read")
