@@ -71,7 +71,7 @@ class LicenseReader():
             crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
             final_crop = self.defineEdgesandCrop(crop_mask, cropped_ori)
             
-            final_crop = cv2.resize(final_crop, (400,500), interpolation= INTER_NEAREST)
+            #final_crop = cv2.resize(final_crop, (400,500), interpolation= INTER_NEAREST)
             isitPlate = self.isLicensePlate(final_crop)
             if isitPlate:
                 cv2.imshow("cropped", final_crop)
@@ -104,14 +104,14 @@ class LicenseReader():
         good_points = []
 
         for m,n in matches: #m is query image, n in image in cam image
-            if m.distance < 0.6*n.distance:
+            if m.distance < 0.8*n.distance:
                 good_points.append(m)
 
         image_match = cv2.drawMatches(img, kp_image, grayframe, kp_grayframe, good_points, grayframe)
         cv2.imshow("matches", image_match)
         cv2.waitKey(3)
 
-        if len(good_points) > 5:
+        if len(good_points) > 10:
             return True
 
         return False
