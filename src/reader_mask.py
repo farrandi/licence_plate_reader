@@ -7,15 +7,36 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 
-from keras import layers
-from keras import models
-from keras import optimizers
-from keras.utils import plot_model
-from keras import backend
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras import models
+from tensorflow.keras import optimizers
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras import backend
 
 class LicenseReader():
 
     def __init__(self):
+
+        tf.keras.backend.clear_session()
+        # define the parking and plate dictionaries
+        self.ordered_data_1 = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        self.int_to_char = dict((i,c) for i,c in enumerate(self.ordered_data_1))
+        self.ordered_data_2 = '123456789'
+        self.int_to_park = dict((i,c) for i,c in enumerate(self.ordered_data_2))
+
+        # load the parking CNN
+        self.sess = tf.keras.backend.get_session()
+        self.graph = tf.compat.v1.get_default_graph()
+
+        # IMPORTANT: models have to be loaded AFTER SETTING THE SESSION for keras! 
+        # Otherwise, their weights will be unavailable in the threads after the session there has been set
+        # set_session(self.sess)
+        self.parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader.h5")
+        self.parkModel._make_predict_function()
+
+        self.plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model.h5")
+        self.plateModel._make_predict_function()
 
         self.bridge = CvBridge()
         self.imageSubscriber = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.findandread)
@@ -23,15 +44,7 @@ class LicenseReader():
         self.ReadRate = rospy.Rate(10)
         self.prevError = 0
 
-        #load the trained CNN for reading licence plate
-        self.ordered_data_1 = 'abcdefghijklmnopqrstuvwxyz0123456789'
-        self.int_to_char = dict((i,c) for i,c in enumerate(self.ordered_data_1))
-        self.plate_model = models.load_model("/home/fizzer/ros_ws/src/my_model")
 
-        #load the parking CNN
-        self.ordered_data_2 = '123456789'
-        self.int_to_park = dict((i,c) for i,c in enumerate(self.ordered_data_2))
-        self.park_model = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader")
 
     # This is the Main read code
     def findandread(self, data):
@@ -94,14 +107,20 @@ class LicenseReader():
 
     #goes through our CNN to read the parking spot and read plate
     def readPlate(self, img):
+        # plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model")
+        # parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader")
+
         plate = ""
         pos = ""
 
         h,w,ch = img.shape
-        parking_pic = img[0:200, w-125:w-10] # must be 200 x 100
-        pos_pred = self.park_model.predict(parking_pic)
-        pos = self.int_to_park[np.argmax(pos_pred)]
-
+        parking_pic = img[0:200, w-110:w-10] # must be 200 x 100
+        park_aug = np.expand_dims(parking_pic, axis=0)
+        with self.graph.as_default():
+            set_session(self.sess)
+            pos_pred = self.parkModel.predict(park_aug)[0]
+            pos = self.int_to_park[np.argmax(pos_pred)]
+        print(pos)
 
         lics_plate = img [h-110:h, 0:w] #shud result in 110 x 215
         scale = int(330/h)
@@ -115,8 +134,12 @@ class LicenseReader():
                 w1 = 330 + (index - 2)*120
             w2 = w1 + 115
             cropped_img = img[100:255, w1:w2]
-            y_predict = self.plate_model.predict(cropped_img)[0]
-            plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
+            cropped_img_aug = np.expand_dims(cropped_img, axis=0)
+
+            with self.graph.as_default():
+                set_session(self.sess)
+                y_pred = self.plateModel.predict(cropped_img_aug)[0]
+                plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
 
         return pos, plate
 

@@ -9,12 +9,18 @@ from matplotlib import pyplot as plt
 from PIL import Image
 import cv2
 
-from keras import layers
-from keras import models
-from keras import optimizers
+import tensorflow as tf
 
-from keras.utils import plot_model
-from keras import backend
+from tensorflow.keras import layers
+from tensorflow.keras import models
+from tensorflow.keras import optimizers
+from tensorflow.keras import backend
+# from keras import layers
+# from keras import models
+# from keras import optimizers
+
+# from keras.utils import plot_model
+# from keras import backend
 
 #This training CNN model is from our enph 353 lab 5
 
@@ -189,7 +195,7 @@ while action !=-1:
 
     # 5: save the model
     elif(action == 5):
-        conv_model.save("/home/fizzer/ros_ws/src/enph353_robot_controller/my_model")
+        conv_model.save("/home/fizzer/ros_ws/src/my_model.h5")
 
     # 6: reset the model
     elif(action == 6):

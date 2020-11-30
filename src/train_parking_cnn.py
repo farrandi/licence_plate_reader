@@ -9,12 +9,19 @@ from matplotlib import pyplot as plt
 from PIL import Image
 import cv2
 
-from keras import layers
-from keras import models
-from keras import optimizers
 
-from keras.utils import plot_model
-from keras import backend
+import tensorflow as tf
+
+from tensorflow.keras import layers
+from tensorflow.keras import models
+from tensorflow.keras import optimizers
+from tensorflow.keras import backend
+# from keras import layers
+# from keras import models
+# from keras import optimizers
+
+# from keras.utils import plot_model
+# from keras import backend
 
 #This training CNN model is from our enph 353 lab 5
 
@@ -65,7 +72,7 @@ while action !=-1:
         char_files = files_in_folder(folder_characters)
 
         #assign integer encode,  ref: https://machinelearningmastery.com/how-to-one-hot-encode-sequence-data-in-python/
-        ordered_data = '123456789'
+        ordered_data = '123456'
 
         #define mapping of characters to integers
         char_to_int = dict((c,i) for i,c in enumerate(ordered_data))
@@ -87,7 +94,7 @@ while action !=-1:
         Y_dataset_orig = np.array([[data[1]] for data in imgset_chars]).T
         print(Y_dataset_orig)
 
-        NUMBER_OF_LABELS = 9
+        NUMBER_OF_LABELS = 6
         CONFIDENCE_THRESHOLD = 0.01
 
         def convert_to_one_hot(Y, C):
@@ -123,7 +130,7 @@ while action !=-1:
         conv_model.add(layers.Flatten())
         conv_model.add(layers.Dropout(0.5))
         conv_model.add(layers.Dense(512, activation='relu'))
-        conv_model.add(layers.Dense(9, activation='softmax'))
+        conv_model.add(layers.Dense(6, activation='softmax'))
         conv_model.summary()
 
         #training the CNN
@@ -133,7 +140,7 @@ while action !=-1:
                         metrics=['acc'])
         history_conv = conv_model.fit(X_dataset, Y_dataset, 
                                     validation_split=VALIDATION_SPLIT, 
-                                    epochs=8, 
+                                    epochs=11, 
                                     batch_size=16)
 
     # 3: See training history
@@ -160,7 +167,7 @@ while action !=-1:
 
     # 5: save the model
     elif(action == 5):
-        conv_model.save("/home/fizzer/ros_ws/src/enph353_robot_controller/my_parking_reader")
+        conv_model.save("/home/fizzer/ros_ws/src/my_parking_reader.h5")
 
     # 6: reset the model
     elif(action == 6):
