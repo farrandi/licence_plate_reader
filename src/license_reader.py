@@ -68,6 +68,7 @@ class LicenseReader():
 
         # The following code is derived from lab 4
         grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #cam image
+        
 
         kp_grayframe, desc_grayframe = sift.detectAndCompute(grayframe,None)
         matches = flann.knnMatch(desc_image, desc_grayframe, k=2)
