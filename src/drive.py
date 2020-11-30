@@ -29,8 +29,8 @@ class RobotDrive():
 
     def pid(self, cX, width):
         
-        Kp = 1/200.0            #1/400
-        Kd = 1/90.0            #1/180
+        Kp = 2.8*10**(-3)            #2.8*10**(-3)
+        Kd = 12*10**(-3)            #13*10**(-3)
         if (cX != -1):
             error = width/2 - cX
             P = Kp * error
