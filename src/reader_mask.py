@@ -41,9 +41,9 @@ class LicenseReader():
             print(e)
 
         hom_img = self.findPlate(cameraImage)
-        while status:
-            print("looping")
-            status = input("type False to stop looping")
+        # while status:
+        #     print("looping")
+        #     status = input("type False to stop looping")
 
     #Uses homography to find the plate
     def findPlate(self, cameraImage):
@@ -52,18 +52,40 @@ class LicenseReader():
         
         # grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #cam image
         image_hsv = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2HSV)
-        maskframe = cv2.inRange(image_hsv, np.array([0,0,195],np.uint8), np.array([0,0,210],np.uint8))
+        
+        # mask for greys (p4,p5)
+        # maskframe = cv2.inRange(image_hsv, np.array([0,0,195],np.uint8), np.array([0,0,210],np.uint8))
+        maskframe = cv2.inRange(image_hsv, np.array([120,122,90],np.uint8), np.array([120,255,204],np.uint8))
+
         mask_h, mask_w = maskframe.shape
-        maskframe = maskframe[0:mask_h - 200, 0: int(mask_w/2)]
+        maskframe = maskframe[0:mask_h, 0: int(mask_w/2)]
 
+        # first mask and crop the blues to get where the plate is
+        cropped_image = self.defineEdgesandCrop(maskframe, image_hsv)
+        cropped_ori = self.defineEdgesandCrop(maskframe, cameraImage)
+        # seond mask and crop the cropped image to find the plate
+        try:
+            crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
+            final_crop = self.defineEdgesandCrop(crop_mask, cropped_ori)
+            cv2.imshow("cropped", final_crop)
+            # cv2.imshow("cropped mask", crop_mask)
+            cv2.waitKey(3)
+        except Exception as e:
+            print("oops")
 
-        #finding the edges
-        dst = cv2.cornerHarris(maskframe,25,3,0.04)
+        cv2.imshow("cam", cameraImage)
+        cv2.waitKey(3)
+        # cv2.imshow("mask", maskframe)
+
+        return maskframe
+
+    def defineEdgesandCrop(self,mask, original):
+        dst = cv2.cornerHarris(mask,25,3,0.04)
         ret, dst = cv2.threshold(dst,0.1*dst.max(),255,0)
         dst = np.uint8(dst)
         ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
-        corners = cv2.cornerSubPix(maskframe,np.float32(centroids),(5,5),(-1,-1),criteria)
+        corners = cv2.cornerSubPix(mask,np.float32(centroids),(5,5),(-1,-1),criteria)
 
         max_h = 0
         max_w = 0
@@ -82,17 +104,8 @@ class LicenseReader():
             if points[1] < min_h:
                 min_h = int(points[1])
         
-
-        cropped_image = cameraImage[min_h-10:max_h+10, min_w-10:max_w+10]
-        # for i in range(1, len(corners)):
-        #     print(corners[i])      
-
-        cv2.imshow("cam", cameraImage)
-        cv2.imshow("mask", maskframe)
-        cv2.imshow("cropped", cropped_image)
-        cv2.waitKey(3)
-
-        return maskframe
+        crop = original[min_h-10:max_h+10, min_w-15:max_w+15]
+        return crop
 
     #goes through our CNN to read the parking spot and read plate
     def readPlate(self, homography_im):
