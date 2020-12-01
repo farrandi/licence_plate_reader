@@ -66,6 +66,9 @@ class LicenseReader():
 
     #Uses homography to find the plate
     def findPlate(self, cImage):
+
+        # The following code is from https://medium.com/programming-fever/license-plate-recognition-using-opencv-python-7611f85cdd6c
+        # with very slight modifications
         h, w, c = cImage.shape
         cameraImage = cImage[h/2-50:h+50, 0:w/2]
         gray = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) 
@@ -108,18 +111,17 @@ class LicenseReader():
             (x, y) = np.where(mask == 255)
             (topx, topy) = (np.min(x), np.min(y))
             (bottomx, bottomy) = (np.max(x), np.max(y))
-            Cropped = cameraImage[topx:bottomx+25, topy:bottomy+1]
+            cropped = cameraImage[topx:bottomx+25, topy:bottomy+1]
 
             img = cv2.resize(cameraImage,(500,300))
-            Cropped = cv2.resize(Cropped,(215,350))
+            cropped = cv2.resize(cropped,(215,350))
             #cv2.imshow('car',cameraImage)
-            cv2.imshow('Cropped',Cropped)
+            cv2.imshow('Cropped',cropped)
             cv2.waitKey(3)
+            
+            if isLicensePlate(cropped):
+                return Cropped
 
-            return Cropped
-    # cv2.imshow("cam", cameraImage)
-    # cv2.waitKey(3)
-    # cv2.imshow("mask", maskframe)
         return None
 
     #goes through our CNN to read the parking spot and read plate
