@@ -13,6 +13,8 @@ from tensorflow.keras import models
 from tensorflow.keras import optimizers
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras import backend
+from tensorflow.python.keras.backend import set_session
+from tensorflow.python.keras.models import load_model
 
 class LicenseReader():
 
@@ -22,7 +24,7 @@ class LicenseReader():
         # define the parking and plate dictionaries
         self.ordered_data_1 = 'abcdefghijklmnopqrstuvwxyz0123456789'
         self.int_to_char = dict((i,c) for i,c in enumerate(self.ordered_data_1))
-        self.ordered_data_2 = '123456789'
+        self.ordered_data_2 = '123456'
         self.int_to_park = dict((i,c) for i,c in enumerate(self.ordered_data_2))
 
         # load the parking CNN
@@ -69,8 +71,7 @@ class LicenseReader():
         # grayframe = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) #cam image
         image_hsv = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2HSV)
         
-        # mask for greys (p4,p5)
-        # maskframe = cv2.inRange(image_hsv, np.array([0,0,195],np.uint8), np.array([0,0,210],np.uint8))
+        # mask for blues
         maskframe = cv2.inRange(image_hsv, np.array([120,122,90],np.uint8), np.array([120,255,204],np.uint8))
 
         mask_h, mask_w = maskframe.shape
@@ -81,13 +82,25 @@ class LicenseReader():
         cropped_ori = self.defineEdgesandCrop(maskframe, cameraImage)
         # seond mask and crop the cropped image to find the plate
         try:
+            # mask for greys
             crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
-            final_crop = self.defineEdgesandCrop(crop_mask, cropped_ori)
+            crop_2_hsv = self.defineEdgesandCrop(crop_mask, cropped_image)
+            print(crop_2_hsv.shape)
+            # crop_2_ori = self.defineEdgesandCrop(crop_mask, cropped_ori)
+            crop_2_mask = cv2.inRange(crop_2_hsv, np.array([120,122,90],np.uint8), np.array([120,255,204],np.uint8))
+            final_crop = self.defineEdgesandCrop(crop_2_mask, crop_2_hsv, 5)
+            final_crop = cv2.cvtColor(final_crop, cv2.COLOR_HSV2BGR)
+            
+            cv2.imshow("crop2", crop_2_hsv)
+            cv2.imshow("2 mask", crop_2_mask)
+            cv2.imshow("sinal", final_crop)
+            cv2.waitKey(3)
+
             h,w,ch = final_crop.shape
 
-            scale = int(350/h)
+            scale = int(350/h)+1
             if scale < 215/w:
-                scale = int(215/w)
+                scale = int(215/w)+1
 
             final_crop = cv2.resize(final_crop,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
             isitPlate = self.isLicensePlate(final_crop)
@@ -97,7 +110,7 @@ class LicenseReader():
                 return final_crop
 
         except Exception as e:
-            print("oops")
+            print(e)
 
         # cv2.imshow("cam", cameraImage)
         # cv2.waitKey(3)
@@ -114,33 +127,43 @@ class LicenseReader():
         pos = ""
 
         h,w,ch = img.shape
-        parking_pic = img[0:200, w-110:w-10] # must be 200 x 100
+        parking_pic = img[40:240, w-130:w-30] # must be 200 x 100
+        # cv2.imshow("parking", parking_pic)
+        # cv2.waitKey(3)
+
         park_aug = np.expand_dims(parking_pic, axis=0)
+
         with self.graph.as_default():
             set_session(self.sess)
             pos_pred = self.parkModel.predict(park_aug)[0]
+            print(pos_pred)
             pos = self.int_to_park[np.argmax(pos_pred)]
         print(pos)
 
         lics_plate = img [h-110:h, 0:w] #shud result in 110 x 215
-        scale = int(330/h)
+        scale = int(330/h)+1
         if scale < 645/w:
-                scale = int(645/w)
+            scale = int(645/w)+1
         lics_plate = cv2.resize(lics_plate,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
+
         for index in range(4):
             if (index <2 ):
                 w1 = 30 + (index)*120
             else:
                 w1 = 330 + (index - 2)*120
             w2 = w1 + 115
-            cropped_img = img[100:255, w1:w2]
+            cropped_img = lics_plate[100:255, w1:w2]
             cropped_img_aug = np.expand_dims(cropped_img, axis=0)
+            # cv2.imshow("crop", cropped_img)
 
             with self.graph.as_default():
-                set_session(self.sess)
-                y_pred = self.plateModel.predict(cropped_img_aug)[0]
-                plate = plate + self.int_to_char[np.argmax(y_predict)].upper()
-
+                try:
+                    set_session(self.sess)
+                    y_pred = self.plateModel.predict(cropped_img_aug)[0]
+                    plate = plate + self.int_to_char[np.argmax(y_pred)].upper()
+                except Exception as e:
+                    print("plate not found")
+                
         return pos, plate
 
 #### helper method
@@ -161,20 +184,22 @@ class LicenseReader():
         good_points = []
 
         for m,n in matches: #m is query image, n in image in cam image
-            if m.distance < 0.8*n.distance:
+            if m.distance < 0.5*n.distance:
                 good_points.append(m)
 
         image_match = cv2.drawMatches(img, kp_image, grayframe, kp_grayframe, good_points, grayframe)
-        cv2.imshow("matches", image_match)
-        cv2.waitKey(3)
+        # cv2.imshow("matches", image_match)
+        # cv2.waitKey(3)
 
         if len(good_points) > 10:
             return True
 
         return False
 
-    def defineEdgesandCrop(self,mask, original):
-        dst = cv2.cornerHarris(mask,20,3,0.04)
+    def defineEdgesandCrop(self,mask, original, num = None):
+        if num == None:
+            num = 20
+        dst = cv2.cornerHarris(mask,num,3,0.04)
         ret, dst = cv2.threshold(dst,0.1*dst.max(),255,0)
         dst = np.uint8(dst)
         ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
