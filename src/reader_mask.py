@@ -82,20 +82,9 @@ class LicenseReader():
         cropped_ori = self.defineEdgesandCrop(maskframe, cameraImage)
         # seond mask and crop the cropped image to find the plate
         try:
-            # mask for greys
+            # mask for gray
             crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
-            crop_2_hsv = self.defineEdgesandCrop(crop_mask, cropped_image)
-            print(crop_2_hsv.shape)
-            # crop_2_ori = self.defineEdgesandCrop(crop_mask, cropped_ori)
-            crop_2_mask = cv2.inRange(crop_2_hsv, np.array([120,122,90],np.uint8), np.array([120,255,204],np.uint8))
-            final_crop = self.defineEdgesandCrop(crop_2_mask, crop_2_hsv, 5)
-            final_crop = cv2.cvtColor(final_crop, cv2.COLOR_HSV2BGR)
-            
-            cv2.imshow("crop2", crop_2_hsv)
-            cv2.imshow("2 mask", crop_2_mask)
-            cv2.imshow("sinal", final_crop)
-            cv2.waitKey(3)
-
+            final_crop = self.defineEdgesandCrop(crop_mask, cropped_ori)
             h,w,ch = final_crop.shape
 
             scale = int(350/h)+1
@@ -128,9 +117,8 @@ class LicenseReader():
 
         h,w,ch = img.shape
         parking_pic = img[40:240, w-130:w-30] # must be 200 x 100
-        # cv2.imshow("parking", parking_pic)
-        # cv2.waitKey(3)
-
+        cv2.imshow("parking", parking_pic)
+        cv2.waitKey(3)
         park_aug = np.expand_dims(parking_pic, axis=0)
 
         with self.graph.as_default():
@@ -154,7 +142,7 @@ class LicenseReader():
             w2 = w1 + 115
             cropped_img = lics_plate[100:255, w1:w2]
             cropped_img_aug = np.expand_dims(cropped_img, axis=0)
-            # cv2.imshow("crop", cropped_img)
+            cv2.imshow("crop", cropped_img)
 
             with self.graph.as_default():
                 try:
@@ -197,8 +185,8 @@ class LicenseReader():
         return False
 
     def defineEdgesandCrop(self,mask, original, num = None):
-        if num == None:
-            num = 20
+        if num is None:
+            num =20
         dst = cv2.cornerHarris(mask,num,3,0.04)
         ret, dst = cv2.threshold(dst,0.1*dst.max(),255,0)
         dst = np.uint8(dst)
