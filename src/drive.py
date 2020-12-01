@@ -88,14 +88,7 @@ class RobotDrive():
             M_crosswalk = cv2.moments(crosswalk_mask)
             M_pedestrian = cv2.moments(pedestrian_mask)
             M_pedestrian_road = cv2.moments(pedestrian_road_mask)
-
-            #cv2.imshow("image", cameraImage)
-            #cv2.imshow("road mask", road_mask)
-            #cv2.imshow("road", road_mask)
-            #cv2.imshow("pedestrian", pedestrian_mask)
-            #cv2.imshow("pedestrian road mask", pedestrian_road_mask)
-            #cv2.waitKey(3)
-
+            
             # Detecting Road
             if (int(M_road["m00"]) != 0):
                 cX_road = int(M_road["m10"] / M_road["m00"])
