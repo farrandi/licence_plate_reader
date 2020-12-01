@@ -34,12 +34,11 @@ class LicenseReader():
 
         # IMPORTANT: models have to be loaded AFTER SETTING THE SESSION for keras! 
         # Otherwise, their weights will be unavailable in the threads after the session there has been set
-        # set_session(self.sess)
-        # self.parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader.h5")
-        # self.parkModel._make_predict_function()
+        self.parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader.h5")
+        self.parkModel._make_predict_function()
 
-        # self.plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model.h5")
-        # self.plateModel._make_predict_function()
+        self.plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model.h5")
+        self.plateModel._make_predict_function()
 
         self.bridge = CvBridge()
         self.imageSubscriber = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.findandread)
@@ -60,7 +59,7 @@ class LicenseReader():
 
         if (lic_plate is not None):
             print("run CNN")
-            # pos, plate = self.readPlate(lic_plate)
+            pos, plate = self.readPlate(lic_plate)
             print("in P{}, plate = {}".format(pos, plate))
 
 
@@ -81,7 +80,6 @@ class LicenseReader():
         screenCnt = None
 
         for c in contours:
-            
             peri = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.010 * peri, True)
         
@@ -116,11 +114,12 @@ class LicenseReader():
             img = cv2.resize(cameraImage,(500,300))
             cropped = cv2.resize(cropped,(215,350))
             #cv2.imshow('car',cameraImage)
-            cv2.imshow('Cropped',cropped)
-            cv2.waitKey(3)
+
             
-            if isLicensePlate(cropped):
-                return Cropped
+            if self.isLicensePlate(cropped):
+                cv2.imshow('License Plate',cropped)
+                cv2.waitKey(3)
+                return cropped
 
         return None
 
@@ -190,12 +189,13 @@ class LicenseReader():
         good_points = []
 
         for m,n in matches: #m is query image, n in image in cam image
-            if m.distance < 0.5*n.distance:
+            if m.distance < 0.7*n.distance:
                 good_points.append(m)
 
         image_match = cv2.drawMatches(img, kp_image, grayframe, kp_grayframe, good_points, grayframe)
-        # cv2.imshow("matches", image_match)
-        # cv2.waitKey(3)
+
+        cv2.imshow("matches", image_match)
+        cv2.waitKey(3)
 
         if len(good_points) > 10:
             return True
