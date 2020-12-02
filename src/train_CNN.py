@@ -149,7 +149,7 @@ while action !=-1:
                         metrics=['acc'])
         history_conv = conv_model.fit(X_dataset, Y_dataset, 
                                     validation_split=VALIDATION_SPLIT, 
-                                    epochs=8, 
+                                    epochs=4, 
                                     batch_size=16)
 
     # 3: See training history
