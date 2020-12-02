@@ -88,7 +88,7 @@ class RobotDrive():
             image_gray = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY)
         
             road_image = image_hsv[height-60:height, 0:width]
-            crosswalk_img = image_hsv[height-150:height, width/2-300:width/2+300]
+            crosswalk_img = image_hsv[height-150:height, 200:width-200]
             pedestrian_img = image_hsv[height-350:height-200, 0:width]
 
             road_upperBound = np.array([0, 0, 95], np.uint8)
