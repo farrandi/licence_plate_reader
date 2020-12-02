@@ -189,16 +189,18 @@ class LicenseReader():
                 pos = self.int_to_park[np.argmax(pos_pred)]
         
         ############## predicting the license plate ####################
-        lics_plate = img [int(0.8*hi):hi, 0:wi] 
-        x = cv2.cvtColor(lics_plate, cv2.COLOR_RGB2HSV)
+        x = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         x = cv2.inRange(x, np.array([120,110,80],np.uint8), np.array([120,240,210],np.uint8))
 
         img = cv2.merge((x,x,x))
-        hi,wi,chi = img.shape
+        # img = img [int(0.8*hi):hi, 0:wi] 
+        # hi,wi,chi = img.shape
         # cv2.imshow("img", img)
 
         lics_plate = img[hi-70:hi-5,0:int(wi/2)]
         h,w,ch = lics_plate.shape
+        
+        cv2.imshow("pos", lics_plate)
         letter_one = lics_plate[0:65,int(w/2)-65:int(w/2)]
         letter_two = lics_plate[0:65,int(w/2):int(w/2)+65]
 
@@ -207,22 +209,22 @@ class LicenseReader():
         num_one = lics_plate[0:65,int(w/2)-65:int(w/2)]
         num_two = lics_plate[0:65,int(w/2):int(w/2)+65]
 
-        letter_one = letter_one/255.
-        letter_two = letter_two/255.
-        num_one = num_one/255.
-        num_two = num_two/255.
+        # letter_one = letter_one/255.
+        # letter_two = letter_two/255.
+        # num_one = num_one/255.
+        # num_two = num_two/255.
 
         l1_aug = np.expand_dims(letter_one, axis=0)
         l2_aug = np.expand_dims(letter_two, axis=0)
         n1_aug = np.expand_dims(num_one, axis=0)
         n2_aug = np.expand_dims(num_two, axis=0)
 
-        # cv2.imshow("pos", parking_pic)
+        
         # cv2.imshow("1", letter_one)
         # cv2.imshow("2", letter_two)
         # cv2.imshow("3", num_one)
         # cv2.imshow("4", num_two)
-        # cv2.waitKey(3)
+        cv2.waitKey(3)
 
         with self.graph.as_default():
             try:
