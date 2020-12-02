@@ -104,7 +104,7 @@ class LicenseReader():
                 w = max_w - min_w
                 h = max_h - min_h
 
-                if abs(w-h) < 20:
+                if abs(w-h) < 40:
                     for pts in approx:
                         h = pts[0,1]
                         if max_h - h < 20:
