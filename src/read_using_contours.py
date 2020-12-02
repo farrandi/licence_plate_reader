@@ -57,8 +57,8 @@ class LicenseReader():
         if (lic_plate is not None):
             pos, plate = self.readPlate(lic_plate)
 
-            if (plate is not None):
-                message = "Team7,chuck,P" + pos +"," + plate
+            if (plate != "" and pos != ""):
+                message = "Team7,chuck," + pos +"," + plate
                 print("in P{}, plate = {}".format(pos, plate))
                 self.ReadPublisher.publish(message)
 
