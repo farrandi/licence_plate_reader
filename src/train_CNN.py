@@ -103,10 +103,12 @@ while action !=-1:
         x_dataset = []
         for x in X_dataset_orig:
             x = cv2.cvtColor(x, cv2.COLOR_BGR2HSV)
-            x = cv2.inRange(x, np.array([120,110,80],np.uint8), np.array([120,240,210],np.uint8))
+            x = cv2.inRange(x, np.array([119,100,75],np.uint8), np.array([121,245,215],np.uint8))
             x = cv2.merge((x,x,x))
             x_dataset.append(x)
-            
+
+        cv2.imshow("x", x_dataset[50]) 
+        cv2.waitKey(3)   
 
         x_dataset = np.array(x_dataset)
         print(x_dataset.shape)

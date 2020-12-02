@@ -190,7 +190,7 @@ class LicenseReader():
         
         ############## predicting the license plate ####################
         x = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-        x = cv2.inRange(x, np.array([120,110,80],np.uint8), np.array([120,240,210],np.uint8))
+        x = cv2.inRange(x, np.array([119,100,75],np.uint8), np.array([121,245,215],np.uint8))
 
         img = cv2.merge((x,x,x))
         # img = img [int(0.8*hi):hi, 0:wi] 
