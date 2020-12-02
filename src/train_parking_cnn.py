@@ -82,7 +82,7 @@ while action !=-1:
         #load the images and assign labels
         imgset_list =[]
         for file in char_files:
-            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[4]]]
+            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[3]]]
             imgset_list.append(ind_img)
 
         #imgset_list = [[np.array(Image.open('{}/{}'.format(folder_characters, file)), char_to_int[file[6]]] for file in char_files]
@@ -122,10 +122,10 @@ while action !=-1:
         #Defining the model
         conv_model = models.Sequential()
         conv_model.add(layers.Conv2D(32, (3, 3), activation='relu',
-                                    input_shape=(200, 100, 3)))
+                                    input_shape=(100, 140, 3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
-                                    input_shape=(200, 100, 3)))
+                                    input_shape=(100, 140, 3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Flatten())
         conv_model.add(layers.Dropout(0.5))
@@ -140,7 +140,7 @@ while action !=-1:
                         metrics=['acc'])
         history_conv = conv_model.fit(X_dataset, Y_dataset, 
                                     validation_split=VALIDATION_SPLIT, 
-                                    epochs=11, 
+                                    epochs=9, 
                                     batch_size=16)
 
     # 3: See training history
