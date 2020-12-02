@@ -88,7 +88,7 @@ class RobotDrive():
             image_gray = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY)
         
             road_image = image_hsv[height-60:height, 0:width]
-            crosswalk_img = image_hsv[height-150:height, 0:width]
+            crosswalk_img = image_hsv[height-150:height, width/2-300:width/2+300]
             pedestrian_img = image_hsv[height-350:height-200, 0:width]
 
             road_upperBound = np.array([0, 0, 95], np.uint8)
@@ -144,8 +144,8 @@ class RobotDrive():
             pedestrian_crossing = False
             
             try:
-                left_ped_road = b_pedestrian_road.index(255) - 50
-                right_ped_road = len(b_pedestrian_road) - 1 - b_pedestrian_road[::-1].index(255) + 50
+                left_ped_road = b_pedestrian_road.index(255) - 30
+                right_ped_road = len(b_pedestrian_road) - 1 - b_pedestrian_road[::-1].index(255) + 30
                 
                 # Determining if Pedestrian is on the Road
                 pedestrian_crossing = True if (cX_ped >= left_ped_road and cX_ped <= right_ped_road) else False
@@ -154,20 +154,20 @@ class RobotDrive():
 
             if (cX_crosswalk == -1):
                 # PID ALGORITHM
-                self.pid(cX_road, width, 0.1)
+                self.pid(cX_road, width, 0.12)
 
             else:
                 # self.twist.linear.x = 0
                 # self.twist.angular.z = 0
                 if (pedestrian_crossing):
-                    if ((cX_ped >= width/2+5 or cX_ped <= width/2-5) ):
+                    if ((cX_ped >= width/2+12 or cX_ped <= width/2-12) and cX_ped > 0):
                         self.twist.angular.z = 0
                         self.twist.linear.x = 0
                         print("Pedestrian is crossing!")
                     else:
-                        self.pid(cX_road, width, 0.2)
+                        self.pid(cX_road, width, 0.1)
                 else:
-                    self.pid(cX_road, width, 0.2)
+                    self.pid(cX_road, width, 0.12)
 
             self.cmdVelPublisher.publish(self.twist)
             self.cmdVelRate.sleep()
@@ -184,7 +184,7 @@ class RobotDrive():
 def main():
 
     rospy.init_node("line_follow")
-    lineFollower = RobotDrive()
+    driver = RobotDrive()
     rate = rospy.Rate(10)
     
     while not rospy.is_shutdown():
