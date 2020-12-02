@@ -55,10 +55,13 @@ class LicenseReader():
 
         lic_plate = self.findPlate(cameraImage)
 
-        # if (lic_plate is not None):
-        #     pos, plate = self.readPlate(lic_plate)
-        #     print("in P{}, plate = {}".format(pos, plate))
+        if (lic_plate is not None):
+            pos, plate = self.readPlate(lic_plate)
+            print("in P{}, plate = {}".format(pos, plate))
 
+            if (plate is not None):
+                message = "Team7,chuck,P" + pos +"," + plate
+                self.ReadPublisher.publish(message)
 
     #Uses homography to find the plate
     def findPlate(self, cImage):
@@ -205,8 +208,17 @@ class LicenseReader():
                     y_pred = self.plateModel.predict(cropped_img_aug)[0]
                     plate = plate + self.int_to_char[np.argmax(y_pred)].upper()
                 except Exception as e:
-                    print("plate not found", e)
-                
+                    print("plate not found", e)]
+
+        # check if the plate is in the form [char, char, int, int]
+        for i in range(4):
+            if i < 2:
+                if (not plate[i].isalpha()):
+                    return pos, None
+            else:
+                if (not plate[i].isdigit()):
+                    return pos, None
+
         return pos, plate
 
 

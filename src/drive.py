@@ -73,7 +73,7 @@ class RobotDrive():
         if (self.timeNotInitialized):
             self.startTime = rospy.get_time()
             self.timeNotInitialized = False
-            self.licensePlatePublisher.publish('Team7,blahblahblah,0,ST00')
+            self.licensePlatePublisher.publish('Team7,chuck,0,ST00')
    
         elif (self.timeElapsed > 0 and self.timeElapsed <= self.timeLimit):
 
@@ -180,7 +180,7 @@ class RobotDrive():
             self.twist.linear.x = 0
             self.twist.angular.z = 0
             self.cmdVelPublisher.publish(self.twist)
-            self.licensePlatePublisher.publish('Team7,blahblahblah,-1,EN99')
+            self.licensePlatePublisher.publish('Team7,chuck,-1,EN99')
             print('Time Elapsed')
     
     
