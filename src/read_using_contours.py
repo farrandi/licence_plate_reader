@@ -175,8 +175,8 @@ class LicenseReader():
         h,w,ch = img.shape
         parking_pic = img[int((0.8*h)-100) : int(0.8*h), w-60:w-10] # must be 100 x 50
         parking_pic = cv2.resize(parking_pic,None,fx=2, fy=2, interpolation = cv2.INTER_CUBIC)
-        cv2.imshow("parking", parking_pic)
-        cv2.waitKey(3)
+        # cv2.imshow("parking", parking_pic)
+        # cv2.waitKey(3)
         
         park_aug = np.expand_dims(parking_pic, axis=0)
 
@@ -202,8 +202,8 @@ class LicenseReader():
             w2 = w1 + 30
             cropped_img = lics_plate[0:h, w1:w2]
             cropped_img_aug = np.expand_dims(cropped_img, axis=0)
-            cv2.imshow("crop", cropped_img)
-            print(cropped_img.shape)
+            # cv2.imshow("crop", cropped_img)
+            # print(cropped_img.shape)
 
             with self.graph.as_default():
                 try:
