@@ -82,7 +82,7 @@ class LicenseReader():
             approx = cv2.approxPolyDP(c, 0.010 * peri, True)
             area = cv2.contourArea(c)
             
-            if len(approx) == 4 and area > 12000:
+            if len(approx) == 4 and area > 10000:
                 max_h = 0
                 min_h = 10000
                 min_w = 10000
