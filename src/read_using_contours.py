@@ -23,7 +23,7 @@ class LicenseReader():
 
         tf.keras.backend.clear_session()
         # define the parking and plate dictionaries
-        self.ordered_data_1 = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        self.ordered_data_1 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
         self.int_to_char = dict((i,c) for i,c in enumerate(self.ordered_data_1))
         self.ordered_data_2 = '123456'
         self.int_to_park = dict((i,c) for i,c in enumerate(self.ordered_data_2))
@@ -32,11 +32,11 @@ class LicenseReader():
         self.sess = tf.keras.backend.get_session()
         self.graph = tf.compat.v1.get_default_graph()
 
-        # self.parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader.h5")
-        # self.parkModel._make_predict_function()
+        self.parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader.h5")
+        self.parkModel._make_predict_function()
 
-        # self.plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model.h5")
-        # self.plateModel._make_predict_function()
+        self.plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model.h5")
+        self.plateModel._make_predict_function()
 
         self.bridge = CvBridge()
         self.imageSubscriber = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.findandread)
@@ -57,10 +57,10 @@ class LicenseReader():
 
         if (lic_plate is not None):
             pos, plate = self.readPlate(lic_plate)
-            print("in P{}, plate = {}".format(pos, plate))
 
             if (plate is not None):
                 message = "Team7,chuck,P" + pos +"," + plate
+                print("in P{}, plate = {}".format(pos, plate))
                 self.ReadPublisher.publish(message)
 
     #Uses homography to find the plate
@@ -170,54 +170,69 @@ class LicenseReader():
         plate = ""
         pos = ""
 
-        h,w,ch = img.shape
-        parking_pic = img[int((0.8*h)-100) : int(0.8*h), w-60:w-10] # must be 100 x 50
-        parking_pic = cv2.resize(parking_pic,None,fx=2, fy=2, interpolation = cv2.INTER_CUBIC)
-        # cv2.imshow("parking", parking_pic)
-        # cv2.waitKey(3)
-        
+        ############ predicting the parking position #################
+        # resize the plate
+        hi,wi,chi = img.shape
+        scale_h = 400/hi
+        scale_w = 350/wi
+        img = cv2.resize(img,None,fx=scale_h, fy=scale_w, interpolation = cv2.INTER_CUBIC)
+
+        hi,wi,chi = img.shape
+        parking_pic = img[int(0.7*hi)-100:int(0.7*hi),wi-150:wi-10]    
         park_aug = np.expand_dims(parking_pic, axis=0)
 
         with self.graph.as_default():
             set_session(self.sess)
             pos_pred = self.parkModel.predict(park_aug)[0]
-            pos = self.int_to_park[np.argmax(pos_pred)]
+            if np.amax(pos_pred) > 0.8:
+                pos = self.int_to_park[np.argmax(pos_pred)]
         
+        ############## predicting the license plate ####################
+        lics_plate = img [int(0.8*hi):hi, 0:wi] 
 
-        lics_plate = img [int(0.8*h):h, 0:w] #shud result in 110 x 215
-        # scale = int(330/h)+1
-        # if scale < 645/w:
-        #     scale = int(645/w)+1
-        # lics_plate = cv2.resize(lics_plate,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
-
+        lics_plate = img[hi-70:hi-5,0:int(wi/2)]
         h,w,ch = lics_plate.shape
-        for index in range(4):
-            if (index <2 ):
-                w1 = 10 + (index)*30
-            else:
-                w1 = 100 + (index - 2)*30
-            w2 = w1 + 30
-            cropped_img = lics_plate[0:h, w1:w2]
-            cropped_img_aug = np.expand_dims(cropped_img, axis=0)
-            # cv2.imshow("crop", cropped_img)
-            # print(cropped_img.shape)
+        letter_one = lics_plate[0:65,int(w/2)-65:int(w/2)]
+        letter_two = lics_plate[0:65,int(w/2):int(w/2)+65]
 
-            with self.graph.as_default():
-                try:
-                    set_session(self.sess)
-                    y_pred = self.plateModel.predict(cropped_img_aug)[0]
-                    plate = plate + self.int_to_char[np.argmax(y_pred)].upper()
-                except Exception as e:
-                    print("plate not found", e)]
+        lics_plate = img[hi-70:hi-5,int(wi/2):wi]
+        h,w,ch = lics_plate.shape
+        num_one = lics_plate[0:65,int(w/2)-65:int(w/2)]
+        num_two = lics_plate[0:65,int(w/2):int(w/2)+65]
 
+        l1_aug = np.expand_dims(letter_one, axis=0)
+        l2_aug = np.expand_dims(letter_two, axis=0)
+        n1_aug = np.expand_dims(num_one, axis=0)
+        n2_aug = np.expand_dims(num_two, axis=0)
+
+        # cv2.imshow("cut lic", letter_one)
+        # cv2.imshow("cut lic", letter_one)
+        # cv2.imshow("cut lic", letter_one)
+        # cv2.imshow("cut lic", letter_one)
+        # cv2.waitKey(3)
+
+        with self.graph.as_default():
+            try:
+                set_session(self.sess)
+                l1_pred = self.plateModel.predict(l1_aug)[0]
+                l2_pred = self.plateModel.predict(l2_aug)[0]
+                n1_pred = self.plateModel.predict(n1_aug)[0]
+                n2_pred = self.plateModel.predict(n2_aug)[0]
+
+                plate = plate + self.int_to_char[np.argmax(l1_pred)] + self.int_to_char[np.argmax(l2_pred)] #adds the letters
+                plate = plate + self.int_to_char[np.argmax(n1_pred)] + self.int_to_char[np.argmax(n2_pred)] #adds the numbers
+            except Exception as e:
+                print("plate not found", e)
+
+        print(pos,plate)
         # check if the plate is in the form [char, char, int, int]
-        for i in range(4):
-            if i < 2:
-                if (not plate[i].isalpha()):
-                    return pos, None
-            else:
-                if (not plate[i].isdigit()):
-                    return pos, None
+        # for i in range(4):
+        #     if i < 2:
+        #         if (not plate[i].isalpha()):
+        #             return pos, None
+        #     else:
+        #         if (not plate[i].isdigit()):
+        #             return pos, None
 
         return pos, plate
 
