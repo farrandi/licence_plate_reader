@@ -71,7 +71,8 @@ while action !=-1:
         char_files = files_in_folder(folder_characters)
 
         #assign integer encode,  ref: https://machinelearningmastery.com/how-to-one-hot-encode-sequence-data-in-python/
-        ordered_data = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        # ordered_data = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        ordered_data = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
         #define mapping of characters to integers
         char_to_int = dict((c,i) for i,c in enumerate(ordered_data))
         int_to_char = dict((i,c) for i,c in enumerate(ordered_data))
@@ -80,7 +81,7 @@ while action !=-1:
         #load the images and assign labels
         imgset_list =[]
         for file in char_files:
-            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[6]]]
+            ind_img = [cv2.imread('{}/{}'.format(folder_characters, file)), char_to_int[file[3]]]
             imgset_list.append(ind_img)
 
         #imgset_list = [[np.array(Image.open('{}/{}'.format(folder_characters, file)), char_to_int[file[6]]] for file in char_files]
@@ -120,10 +121,10 @@ while action !=-1:
         #Defining the model
         conv_model = models.Sequential()
         conv_model.add(layers.Conv2D(32, (3, 3), activation='relu',
-                                    input_shape=(155, 115, 3)))
+                                    input_shape=(65, 65, 3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
-                                    input_shape=(155, 115, 3)))
+                                    input_shape=(65, 65, 3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Flatten())
         conv_model.add(layers.Dropout(0.5))
