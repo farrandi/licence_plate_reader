@@ -154,20 +154,20 @@ class RobotDrive():
 
             if (cX_crosswalk == -1):
                 # PID ALGORITHM
-                self.pid(cX_road, width, 0.12)
+                self.pid(cX_road, width, 0.13)
 
             else:
                 # self.twist.linear.x = 0
                 # self.twist.angular.z = 0
                 if (pedestrian_crossing):
-                    if ((cX_ped >= width/2+12 or cX_ped <= width/2-12) and cX_ped > 0):
+                    if ((cX_ped >= width/2+15 or cX_ped <= width/2-15) and cX_ped > 0):
                         self.twist.angular.z = 0
                         self.twist.linear.x = 0
                         print("Pedestrian is crossing!")
                     else:
-                        self.pid(cX_road, width, 0.1)
+                        self.pid(cX_road, width, 0.13)
                 else:
-                    self.pid(cX_road, width, 0.12)
+                    self.pid(cX_road, width, 0.13)
 
             self.cmdVelPublisher.publish(self.twist)
             self.cmdVelRate.sleep()
