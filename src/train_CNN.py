@@ -103,7 +103,7 @@ while action !=-1:
         x_dataset = []
         for x in X_dataset_orig:
             x = cv2.cvtColor(x, cv2.COLOR_BGR2HSV)
-            x = cv2.inRange(x, np.array([120,140,90],np.uint8), np.array([120,220,200],np.uint8))
+            x = cv2.inRange(x, np.array([120,110,80],np.uint8), np.array([120,240,210],np.uint8))
             x = cv2.merge((x,x,x))
             x_dataset.append(x)
             
@@ -130,7 +130,7 @@ while action !=-1:
     elif(action == 2):
         #Defining the model
         conv_model = models.Sequential()
-        conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
+        conv_model.add(layers.Conv2D(32, (3, 3), activation='relu',
                                     input_shape=(65, 65,3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',

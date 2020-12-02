@@ -190,9 +190,12 @@ class LicenseReader():
         
         ############## predicting the license plate ####################
         lics_plate = img [int(0.8*hi):hi, 0:wi] 
-        # lics_plate = lics_plate/255.
-        x = cv2.inRange(lics_plate, np.array([120,140,90],np.uint8), np.array([120,220,200],np.uint8))
-        lics_plate = cv2.merge((x,x,x))
+        x = cv2.cvtColor(lics_plate, cv2.COLOR_RGB2HSV)
+        x = cv2.inRange(x, np.array([120,110,80],np.uint8), np.array([120,240,210],np.uint8))
+
+        img = cv2.merge((x,x,x))
+        hi,wi,chi = img.shape
+        # cv2.imshow("img", img)
 
         lics_plate = img[hi-70:hi-5,0:int(wi/2)]
         h,w,ch = lics_plate.shape
@@ -214,12 +217,12 @@ class LicenseReader():
         n1_aug = np.expand_dims(num_one, axis=0)
         n2_aug = np.expand_dims(num_two, axis=0)
 
-        # cv2.imshow("pos", parking_pic)
-        # cv2.imshow("1", letter_one)
-        # cv2.imshow("2", letter_two)
-        # cv2.imshow("3", num_one)
-        # cv2.imshow("4", num_two)
-        # cv2.waitKey(3)
+        cv2.imshow("pos", parking_pic)
+        cv2.imshow("1", letter_one)
+        cv2.imshow("2", letter_two)
+        cv2.imshow("3", num_one)
+        cv2.imshow("4", num_two)
+        cv2.waitKey(3)
 
         with self.graph.as_default():
             try:
