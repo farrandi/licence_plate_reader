@@ -88,7 +88,7 @@ class RobotDrive():
             image_gray = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY)
         
             road_image = image_hsv[height-60:height, 0:width]
-            crosswalk_img = image_hsv[height-60:height, 0:width]
+            crosswalk_img = image_hsv[height-150:height, 0:width]
             pedestrian_img = image_hsv[height-350:height-200, 0:width]
 
             road_upperBound = np.array([0, 0, 95], np.uint8)
@@ -110,6 +110,9 @@ class RobotDrive():
             M_pedestrian = cv2.moments(pedestrian_mask)
             M_pedestrian_road = cv2.moments(pedestrian_road_mask)
             
+            cv2.imshow("pedestrian mask", pedestrian_mask)
+            cv2.imshow("crosswalk mask", crosswalk_mask)
+            cv2.waitKey(3)
             # Detecting Road
             if (int(M_road["m00"]) != 0):
                 cX_road = int(M_road["m10"] / M_road["m00"])
@@ -141,8 +144,8 @@ class RobotDrive():
             pedestrian_crossing = False
             
             try:
-                left_ped_road = b_pedestrian_road.index(255) - 25
-                right_ped_road = len(b_pedestrian_road) - 1 - b_pedestrian_road[::-1].index(255) + 25
+                left_ped_road = b_pedestrian_road.index(255) - 50
+                right_ped_road = len(b_pedestrian_road) - 1 - b_pedestrian_road[::-1].index(255) + 50
                 
                 # Determining if Pedestrian is on the Road
                 pedestrian_crossing = True if (cX_ped >= left_ped_road and cX_ped <= right_ped_road) else False
@@ -154,8 +157,10 @@ class RobotDrive():
                 self.pid(cX_road, width, 0.1)
 
             else:
+                # self.twist.linear.x = 0
+                # self.twist.angular.z = 0
                 if (pedestrian_crossing):
-                    if ((cX_ped >= width/2+4 or cX_ped <= width/2-4) and cX_ped > 0):
+                    if ((cX_ped >= width/2+5 or cX_ped <= width/2-5) ):
                         self.twist.angular.z = 0
                         self.twist.linear.x = 0
                         print("Pedestrian is crossing!")
