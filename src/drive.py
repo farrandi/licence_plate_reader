@@ -180,7 +180,7 @@ class RobotDrive():
             self.twist.linear.x = 0
             self.twist.angular.z = 0
             self.cmdVelPublisher.publish(self.twist)
-            if (not done):
+            if (not self.done):
                 self.licensePlatePublisher.publish('Team7,chuck,-1,EN99')
                 self.done = True
             print('Time Elapsed')

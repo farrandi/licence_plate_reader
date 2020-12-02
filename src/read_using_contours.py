@@ -200,7 +200,7 @@ class LicenseReader():
         lics_plate = img[hi-70:hi-5,0:int(wi/2)]
         h,w,ch = lics_plate.shape
         
-        cv2.imshow("pos", lics_plate)
+        # cv2.imshow("pos", lics_plate)
         letter_one = lics_plate[0:65,int(w/2)-65:int(w/2)]
         letter_two = lics_plate[0:65,int(w/2):int(w/2)+65]
 
