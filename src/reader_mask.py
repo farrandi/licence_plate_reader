@@ -76,6 +76,7 @@ class LicenseReader():
 
         mask_h, mask_w = maskframe.shape
         maskframe = maskframe[0:mask_h, 0: int(mask_w/2)]
+        
 
         # first mask and crop the blues to get where the plate is
         cropped_image = self.defineEdgesandCrop(maskframe, image_hsv)
@@ -83,19 +84,22 @@ class LicenseReader():
         # seond mask and crop the cropped image to find the plate
         try:
             # mask for gray
-            crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
+            crop_mask = cv2.inRange(cropped_image, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8)) #ori val
+            # crop_mask = cv2.inRange(cropped_image, np.array([100,0,76],np.uint8), np.array([140,4,179],np.uint8))
             final_crop = self.defineEdgesandCrop(crop_mask, cropped_ori)
             h,w,ch = final_crop.shape
 
-            scale = int(350/h)+1
-            if scale < 215/w:
-                scale = int(215/w)+1
+            cv2.imshow("mask", crop_mask)
+            cv2.imshow("cropped", final_crop)
+            cv2.waitKey(3)
+
+            # scale = int(350/h)+1
+            # if scale < 215/w:
+            #     scale = int(215/w)+1
 
             final_crop = cv2.resize(final_crop,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
             isitPlate = self.isLicensePlate(final_crop)
             if isitPlate:
-                cv2.imshow("cropped", final_crop)
-                cv2.waitKey(3)
                 return final_crop
 
         except Exception as e:
@@ -184,7 +188,7 @@ class LicenseReader():
 
         return False
 
-    def defineEdgesandCrop(self,mask, original, num = None):
+    def defineEdgesandCrop(self,mask, original, num = None, error = None):
         if num is None:
             num =20
         dst = cv2.cornerHarris(mask,num,3,0.04)
@@ -211,7 +215,13 @@ class LicenseReader():
             if points[1] < min_h:
                 min_h = int(points[1])
         
-        crop = original[min_h-10:max_h+10, min_w-15:max_w+15]
+        if error is None:
+            e_h = 10
+            e_w = 15
+        else:
+            e_h = error
+            e_w = error
+        crop = original[min_h-e_h:max_h+e_h, min_w-e_w:max_w+e_w]
         return crop
 
 def main():

@@ -3,7 +3,7 @@
 import rospy
 import cv2
 import numpy as np
-import imutils
+from scipy.spatial import distance as dist
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
@@ -71,21 +71,32 @@ class LicenseReader():
         h, w, c = cImage.shape
         cameraImage = cImage[h/2-50:h+50, 0:w/2]
         gray = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY) 
-        gray = cv2.bilateralFilter(gray, 13, 15, 15) 
+        hsv_im = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2HSV) 
+        mask = cv2.inRange(hsv_im, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
 
-        edged = cv2.Canny(gray, 30, 200) 
-        contours = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        print(contours)
-        contours = imutils.grab_contours(contours)
-        print("after imutils:", contours)
-        contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
+        cv2.imshow("gray", mask)
+        cv2.waitKey(3)
+        
+        x, contours, y = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         screenCnt = None
 
         for c in contours:
             peri = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.010 * peri, True)
+            area = cv2.contourArea(c)
             
-            if len(approx) == 4:
+            if len(approx) == 4 and area > 10000:
+                max_h = 0
+                for pts in approx:  #approx gives (w,h)
+                    h = pts[0,1]
+                    if h > max_h:
+                        max_h = h
+                
+                for pts in approx:
+                    h = pts[0,1]
+                    if max_h - h < 20:
+                        pts[0,1] = h + 32
+
                 screenCnt = approx
                 break
 
@@ -96,32 +107,45 @@ class LicenseReader():
             detected = 1
 
         if detected == 1:
-            #cv2.drawContours(cameraImage, [screenCnt], -1, (0, 0, 255), 3)
+            # cv2.drawContours(cameraImage, [screenCnt], -1, (0, 0, 255), 3)
 
             mask = np.zeros(gray.shape,np.uint8)
             new_image = cv2.drawContours(mask,[screenCnt],0,255,-1,)
             new_image = cv2.bitwise_and(cameraImage, cameraImage,mask=mask)
-            # cv2.imshow("mask", mask)
-            # cv2.imshow("edges", edged)
-            # cv2.imshow("2 mask", crop_2_mask)
-            cv2.imshow("final image", new_image)
+
+            cv2.imshow("new image", new_image)
             cv2.waitKey(3)
-
-
-            (x, y) = np.where(mask == 255)
-            (topx, topy) = (np.min(x), np.min(y))
-            (bottomx, bottomy) = (np.max(x), np.max(y))
-            cropped = cameraImage[topx:bottomx+25, topy:bottomy+1]
-
-            img = cv2.resize(cameraImage,(500,300))
-            cropped = cv2.resize(cropped,(215,350))
-            #cv2.imshow('car',cameraImage)
-
             
-            # if self.isLicensePlate(cropped):
-            #     cv2.imshow('License Plate',cropped)
-            #     cv2.waitKey(3)
-            #     return cropped
+            max_h = 0
+            min_h = 10000
+            min_w = 10000
+            max_w = 0
+
+            pts1 = []
+            for pts in screenCnt:
+                h = pts[0,1]
+                w = pts[0,0]
+                point = [w,h]
+                if h > max_h:
+                    max_h = h
+                if h < min_h:
+                    min_h = h
+                if w > max_w:
+                    max_w = w
+                if w < min_w:
+                    min_w = w
+                pts1.append(point)
+            pts1 = np.array(pts1)
+            pts1 = self.order_points(pts1)
+            pts2 = np.float32([[min_w, min_h], [min_w, max_h], [max_w, max_h], [max_w, min_h]])
+            matrix = cv2.getPerspectiveTransform(pts1, pts2) 
+
+            h,w,ch = new_image.shape
+            final_crop = cv2.warpPerspective(new_image, matrix, (w, h))
+            final_crop = final_crop[min_h:max_h,min_w:max_w]
+
+            cv2.imshow("cropped", final_crop)
+            cv2.waitKey(3)
 
         return None
 
@@ -173,66 +197,32 @@ class LicenseReader():
                 
         return pos, plate
 
-#### helper method
-    def isLicensePlate(self, crop_image):
-        img = cv2.imread('/home/fizzer/ros_ws/src/enph353_robot_controller/reader_utils/reference.jpg', cv2.IMREAD_GRAYSCALE)
-        sift = cv2.xfeatures2d.SIFT_create()
-        kp_image, desc_image = sift.detectAndCompute(img,None)
-        index_params = dict(algorithm=0, trees=5)
-        search_params = dict()
-        flann = cv2.FlannBasedMatcher(index_params, search_params)
 
-        # The following code is derived from lab 4
-        grayframe = cv2.cvtColor(crop_image, cv2.COLOR_BGR2GRAY) #cam image
-        
+    ############helper method
 
-        kp_grayframe, desc_grayframe = sift.detectAndCompute(grayframe,None)
-        matches = flann.knnMatch(desc_image, desc_grayframe, k=2)
-        good_points = []
-
-        for m,n in matches: #m is query image, n in image in cam image
-            if m.distance < 0.7*n.distance:
-                good_points.append(m)
-
-        image_match = cv2.drawMatches(img, kp_image, grayframe, kp_grayframe, good_points, grayframe)
-
-        cv2.imshow("matches", image_match)
-        cv2.waitKey(3)
-
-        if len(good_points) > 10:
-            return True
-
-        return False
-
-    def defineEdgesandCrop(self,mask, original, num = None):
-        if num == None:
-            num = 20
-        dst = cv2.cornerHarris(mask,num,3,0.04)
-        ret, dst = cv2.threshold(dst,0.1*dst.max(),255,0)
-        dst = np.uint8(dst)
-        ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
-        corners = cv2.cornerSubPix(mask,np.float32(centroids),(5,5),(-1,-1),criteria)
-
-        max_h = 0
-        max_w = 0
-        min_h = 1000
-        min_w = 1000
-        #print(corners.shape)
-        corners = corners[1:len(corners),:]
-
-        for points in corners:
-            if points[0] > max_w:
-                max_w = int(points[0])
-            if points[0] < min_w:
-                min_w = int(points[0])
-            if points[1] > max_h:
-                max_h = int(points[1])
-            if points[1] < min_h:
-                min_h = int(points[1])
-        
-        crop = original[min_h-10:max_h+10, min_w-15:max_w+15]
-        return crop
+    #taken from: https://www.pyimagesearch.com/2016/03/21/ordering-coordinates-clockwise-with-python-and-opencv/
+    def order_points(self, pts):
+        # sort the points based on their x-coordinates
+        xSorted = pts[np.argsort(pts[:, 0]), :]
+        # grab the left-most and right-most points from the sorted
+        # x-roodinate points
+        leftMost = xSorted[:2, :]
+        rightMost = xSorted[2:, :]
+        # now, sort the left-most coordinates according to their
+        # y-coordinates so we can grab the top-left and bottom-left
+        # points, respectively
+        leftMost = leftMost[np.argsort(leftMost[:, 1]), :]
+        (tl, bl) = leftMost
+        # now that we have the top-left coordinate, use it as an
+        # anchor to calculate the Euclidean distance between the
+        # top-left and right-most points; by the Pythagorean
+        # theorem, the point with the largest distance will be
+        # our bottom-right point
+        D = dist.cdist(tl[np.newaxis], rightMost, "euclidean")[0]
+        (br, tr) = rightMost[np.argsort(D)[::-1], :]
+        # return the coordinates in top-left, top-right,
+        # bottom-right, and bottom-left order
+        return np.array([tl, bl, br, tr], dtype="float32")
 
 def main():
         rospy.init_node("license_read")
