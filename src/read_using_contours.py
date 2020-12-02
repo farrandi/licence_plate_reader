@@ -32,13 +32,11 @@ class LicenseReader():
         self.sess = tf.keras.backend.get_session()
         self.graph = tf.compat.v1.get_default_graph()
 
-        # IMPORTANT: models have to be loaded AFTER SETTING THE SESSION for keras! 
-        # Otherwise, their weights will be unavailable in the threads after the session there has been set
-        self.parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader.h5")
-        self.parkModel._make_predict_function()
+        # self.parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader.h5")
+        # self.parkModel._make_predict_function()
 
-        self.plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model.h5")
-        self.plateModel._make_predict_function()
+        # self.plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model.h5")
+        # self.plateModel._make_predict_function()
 
         self.bridge = CvBridge()
         self.imageSubscriber = rospy.Subscriber("/R1/pi_camera/image_raw", Image, self.findandread)
@@ -57,9 +55,9 @@ class LicenseReader():
 
         lic_plate = self.findPlate(cameraImage)
 
-        if (lic_plate is not None):
-            pos, plate = self.readPlate(lic_plate)
-            print("in P{}, plate = {}".format(pos, plate))
+        # if (lic_plate is not None):
+        #     pos, plate = self.readPlate(lic_plate)
+        #     print("in P{}, plate = {}".format(pos, plate))
 
 
     #Uses homography to find the plate
@@ -166,9 +164,6 @@ class LicenseReader():
 
     #goes through our CNN to read the parking spot and read plate
     def readPlate(self, img):
-        # plateModel = models.load_model("/home/fizzer/ros_ws/src/my_model")
-        # parkModel = models.load_model("/home/fizzer/ros_ws/src/my_parking_reader")
-
         plate = ""
         pos = ""
 
@@ -183,9 +178,8 @@ class LicenseReader():
         with self.graph.as_default():
             set_session(self.sess)
             pos_pred = self.parkModel.predict(park_aug)[0]
-            # print(pos_pred)
             pos = self.int_to_park[np.argmax(pos_pred)]
-        # print(pos)
+        
 
         lics_plate = img [int(0.8*h):h, 0:w] #shud result in 110 x 215
         # scale = int(330/h)+1
