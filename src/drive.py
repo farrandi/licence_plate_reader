@@ -25,7 +25,7 @@ class RobotDrive():
         self.startTime = 0
         self.timeLimit = 240
         self.timeNotInitialized = True
-        
+        self.done = False
 
     def pid(self, cX, width, speed, pedestrianPassed=None):
         
@@ -180,7 +180,9 @@ class RobotDrive():
             self.twist.linear.x = 0
             self.twist.angular.z = 0
             self.cmdVelPublisher.publish(self.twist)
-            self.licensePlatePublisher.publish('Team7,chuck,-1,EN99')
+            if (not done):
+                self.licensePlatePublisher.publish('Team7,chuck,-1,EN99')
+                self.done = True
             print('Time Elapsed')
     
     

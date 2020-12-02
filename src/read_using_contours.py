@@ -217,12 +217,12 @@ class LicenseReader():
         n1_aug = np.expand_dims(num_one, axis=0)
         n2_aug = np.expand_dims(num_two, axis=0)
 
-        cv2.imshow("pos", parking_pic)
-        cv2.imshow("1", letter_one)
-        cv2.imshow("2", letter_two)
-        cv2.imshow("3", num_one)
-        cv2.imshow("4", num_two)
-        cv2.waitKey(3)
+        # cv2.imshow("pos", parking_pic)
+        # cv2.imshow("1", letter_one)
+        # cv2.imshow("2", letter_two)
+        # cv2.imshow("3", num_one)
+        # cv2.imshow("4", num_two)
+        # cv2.waitKey(3)
 
         with self.graph.as_default():
             try:
