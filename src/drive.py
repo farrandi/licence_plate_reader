@@ -27,17 +27,38 @@ class RobotDrive():
         self.timeNotInitialized = True
         
 
-    def pid(self, cX, width):
+    def pid(self, cX, width, speed):
         
         Kp = 2.8*10**(-3)            #2.8*10**(-3)
         Kd = 12*10**(-3)            #13*10**(-3)
+        thresh = 150
         if (cX != -1):
             error = width/2 - cX
+
+            
             P = Kp * error
             D = Kd * (error - self.prevError)
-            self.twist.linear.x = 0.15
+            
             self.twist.angular.z = P + D
             self.prevError = error
+            if (abs(error) <= thresh):
+                self.twist.linear.x = speed
+            else:
+                self.twist.linear.x = 0
+
+            # if (error <= abs(thresh)):
+            #     P = Kp * error
+            #     D = Kd * (error - self.prevError)
+            #     self.twist.linear.x = 0.15
+            #     self.twist.angular.z = P + D
+            #     self.prevError = error
+            # elif (error < -thresh): 
+            #     self.twist.linear.x = 0
+            #     self.twist.angular.z = -0.5
+            # elif (error > thresh):
+            #     self.twist.linear.x = 0
+            #     self.twist.angular.z = 0.5
+
         else: 
             self.twist.linear.x = 0
             self.twist.angular.z = 0.5
@@ -118,28 +139,30 @@ class RobotDrive():
             b_pedestrian_road = pedestrian_road_mask[height_road-1:height_road, 0:width].tolist()
             b_pedestrian_road = b_pedestrian_road[0]
             pedestrian_crossing = False
+            
             try:
-                left_ped_road = b_pedestrian_road.index(255) - 20
-                right_ped_road = len(b_pedestrian_road) - 1 - b_pedestrian_road[::-1].index(255) + 10
+                left_ped_road = b_pedestrian_road.index(255) - 25
+                right_ped_road = len(b_pedestrian_road) - 1 - b_pedestrian_road[::-1].index(255) + 25
                 
                 # Determining if Pedestrian is on the Road
                 pedestrian_crossing = True if (cX_ped >= left_ped_road and cX_ped <= right_ped_road) else False
             except ValueError:
                 print("No road seen ahead")
+
             if (cX_crosswalk == -1):
                 # PID ALGORITHM
-                self.pid(cX_road, width)
+                self.pid(cX_road, width, 0.1)
 
             else:
                 if (pedestrian_crossing):
-                    if ((cX_ped >= width/2+10 or cX_ped <= width/2-10) and cX_ped > 0):
+                    if ((cX_ped >= width/2+4 or cX_ped <= width/2-4) and cX_ped > 0):
                         self.twist.angular.z = 0
                         self.twist.linear.x = 0
                         print("Pedestrian is crossing!")
                     else:
-                        self.pid(cX_road, width)
+                        self.pid(cX_road, width, 0.2)
                 else:
-                    self.pid(cX_road, width)
+                    self.pid(cX_road, width, 0.2)
 
             self.cmdVelPublisher.publish(self.twist)
             self.cmdVelRate.sleep()
