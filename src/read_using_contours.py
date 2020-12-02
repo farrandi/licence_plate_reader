@@ -191,6 +191,8 @@ class LicenseReader():
         ############## predicting the license plate ####################
         lics_plate = img [int(0.8*hi):hi, 0:wi] 
         # lics_plate = lics_plate/255.
+        x = cv2.inRange(lics_plate, np.array([120,140,90],np.uint8), np.array([120,220,200],np.uint8))
+        lics_plate = cv2.merge((x,x,x))
 
         lics_plate = img[hi-70:hi-5,0:int(wi/2)]
         h,w,ch = lics_plate.shape
