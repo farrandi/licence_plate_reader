@@ -27,21 +27,23 @@ class RobotDrive():
         self.timeNotInitialized = True
         
 
-    def pid(self, cX, width, speed):
+    def pid(self, cX, width, speed, pedestrianPassed=None):
         
         Kp = 2.8*10**(-3)            #2.8*10**(-3)
         Kd = 12*10**(-3)            #13*10**(-3)
         thresh = 150
+
+        if pedestrianPassed is None:
+            pedestrianPassed = False
+
         if (cX != -1):
             error = width/2 - cX
-
-            
             P = Kp * error
             D = Kd * (error - self.prevError)
             
             self.twist.angular.z = P + D
             self.prevError = error
-            if (abs(error) <= thresh):
+            if (abs(error) <= thresh or pedestrianPassed):
                 self.twist.linear.x = speed
             else:
                 self.twist.linear.x = 0
@@ -71,7 +73,7 @@ class RobotDrive():
         if (self.timeNotInitialized):
             self.startTime = rospy.get_time()
             self.timeNotInitialized = False
-            self.licensePlatePublisher.publish('TeamName,blahblahblah,0,ST00')
+            self.licensePlatePublisher.publish('Team7,blahblahblah,0,ST00')
    
         elif (self.timeElapsed > 0 and self.timeElapsed <= self.timeLimit):
 
@@ -88,7 +90,7 @@ class RobotDrive():
             image_gray = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2GRAY)
         
             road_image = image_hsv[height-60:height, 0:width]
-            crosswalk_img = image_hsv[height-150:height, 200:width-200]
+            crosswalk_img = image_hsv[height-120:height, 200:width-200]
             pedestrian_img = image_hsv[height-350:height-200, 0:width]
 
             road_upperBound = np.array([0, 0, 95], np.uint8)
@@ -111,8 +113,10 @@ class RobotDrive():
             M_pedestrian_road = cv2.moments(pedestrian_road_mask)
             
             # cv2.imshow("pedestrian mask", pedestrian_mask)
+            # cv2.imshow("ped road mask", pedestrian_road_mask)
             # cv2.imshow("crosswalk mask", crosswalk_mask)
             # cv2.waitKey(3)
+
             # Detecting Road
             if (int(M_road["m00"]) != 0):
                 cX_road = int(M_road["m10"] / M_road["m00"])
@@ -154,20 +158,20 @@ class RobotDrive():
 
             if (cX_crosswalk == -1):
                 # PID ALGORITHM
-                self.pid(cX_road, width, 0.11)
+                self.pid(cX_road, width, 0.115)
 
             else:
                 # self.twist.linear.x = 0
                 # self.twist.angular.z = 0
-                if (pedestrian_crossing):
-                    if ((cX_ped >= width/2+15 or cX_ped <= width/2-15) and cX_ped > 0):
-                        self.twist.angular.z = 0
-                        self.twist.linear.x = 0
-                        print("Pedestrian is crossing!")
-                    else:
-                        self.pid(cX_road, width, 0.11)
+                # if (pedestrian_crossing):
+                if ((cX_ped >= width/2+15 or cX_ped <= width/2-15) and cX_ped > 0):
+                    self.twist.angular.z = 0
+                    self.twist.linear.x = 0
+                    print("Pedestrian is crossing!")
+                    # else:
+                        # self.pid(cX_road, width, 0.115)
                 else:
-                    self.pid(cX_road, width, 0.11)
+                    self.pid(cX_road, width, 0.115, True)
 
             self.cmdVelPublisher.publish(self.twist)
             self.cmdVelRate.sleep()
@@ -176,7 +180,7 @@ class RobotDrive():
             self.twist.linear.x = 0
             self.twist.angular.z = 0
             self.cmdVelPublisher.publish(self.twist)
-            self.licensePlatePublisher.publish('TeamName,blahblahblah,-1,EN99')
+            self.licensePlatePublisher.publish('Team7,blahblahblah,-1,EN99')
             print('Time Elapsed')
     
     
