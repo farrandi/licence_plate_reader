@@ -58,7 +58,6 @@ class LicenseReader():
         lic_plate = self.findPlate(cameraImage)
 
         if (lic_plate is not None):
-            print("run CNN")
             pos, plate = self.readPlate(lic_plate)
             print("in P{}, plate = {}".format(pos, plate))
 
@@ -74,8 +73,8 @@ class LicenseReader():
         hsv_im = cv2.cvtColor(cameraImage, cv2.COLOR_BGR2HSV) 
         mask = cv2.inRange(hsv_im, np.array([0,0,97],np.uint8), np.array([0,0,204],np.uint8))
 
-        cv2.imshow("gray", mask)
-        cv2.waitKey(3)
+        # cv2.imshow("gray", mask)
+        # cv2.waitKey(3)
         
         x, contours, y = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         screenCnt = None
@@ -85,20 +84,34 @@ class LicenseReader():
             approx = cv2.approxPolyDP(c, 0.010 * peri, True)
             area = cv2.contourArea(c)
             
-            if len(approx) == 4 and area > 10000:
+            if len(approx) == 4 and area > 12000:
                 max_h = 0
-                for pts in approx:  #approx gives (w,h)
+                min_h = 10000
+                min_w = 10000
+                max_w = 0
+                for pts in approx: #approx gives (w,h)
                     h = pts[0,1]
+                    w = pts[0,0]
+                    point = [w,h]
                     if h > max_h:
                         max_h = h
-                
-                for pts in approx:
-                    h = pts[0,1]
-                    if max_h - h < 20:
-                        pts[0,1] = h + 32
+                    if h < min_h:
+                        min_h = h
+                    if w > max_w:
+                        max_w = w
+                    if w < min_w:
+                        min_w = w
+                w = max_w - min_w
+                h = max_h - min_h
 
-                screenCnt = approx
-                break
+                if abs(w-h) < 20:
+                    for pts in approx:
+                        h = pts[0,1]
+                        if max_h - h < 20:
+                            pts[0,1] = h + 32
+
+                    screenCnt = approx
+                    break
 
         if screenCnt is None:
             detected = 0
@@ -113,8 +126,8 @@ class LicenseReader():
             new_image = cv2.drawContours(mask,[screenCnt],0,255,-1,)
             new_image = cv2.bitwise_and(cameraImage, cameraImage,mask=mask)
 
-            cv2.imshow("new image", new_image)
-            cv2.waitKey(3)
+            # cv2.imshow("new image", new_image)
+            # cv2.waitKey(3)
             
             max_h = 0
             min_h = 10000
@@ -135,6 +148,7 @@ class LicenseReader():
                 if w < min_w:
                     min_w = w
                 pts1.append(point)
+
             pts1 = np.array(pts1)
             pts1 = self.order_points(pts1)
             pts2 = np.float32([[min_w, min_h], [min_w, max_h], [max_w, max_h], [max_w, min_h]])
@@ -146,6 +160,7 @@ class LicenseReader():
 
             cv2.imshow("cropped", final_crop)
             cv2.waitKey(3)
+            return final_crop
 
         return None
 
@@ -158,34 +173,37 @@ class LicenseReader():
         pos = ""
 
         h,w,ch = img.shape
-        parking_pic = img[40:240, w-130:w-30] # must be 200 x 100
-        # cv2.imshow("parking", parking_pic)
-        # cv2.waitKey(3)
-
+        parking_pic = img[int((0.8*h)-100) : int(0.8*h), w-60:w-10] # must be 100 x 50
+        parking_pic = cv2.resize(parking_pic,None,fx=2, fy=2, interpolation = cv2.INTER_CUBIC)
+        cv2.imshow("parking", parking_pic)
+        cv2.waitKey(3)
+        
         park_aug = np.expand_dims(parking_pic, axis=0)
 
         with self.graph.as_default():
             set_session(self.sess)
             pos_pred = self.parkModel.predict(park_aug)[0]
-            print(pos_pred)
+            # print(pos_pred)
             pos = self.int_to_park[np.argmax(pos_pred)]
-        print(pos)
+        # print(pos)
 
-        lics_plate = img [h-110:h, 0:w] #shud result in 110 x 215
-        scale = int(330/h)+1
-        if scale < 645/w:
-            scale = int(645/w)+1
-        lics_plate = cv2.resize(lics_plate,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
+        lics_plate = img [int(0.8*h):h, 0:w] #shud result in 110 x 215
+        # scale = int(330/h)+1
+        # if scale < 645/w:
+        #     scale = int(645/w)+1
+        # lics_plate = cv2.resize(lics_plate,None,fx=scale, fy=scale, interpolation = cv2.INTER_CUBIC)
 
+        h,w,ch = lics_plate.shape
         for index in range(4):
             if (index <2 ):
-                w1 = 30 + (index)*120
+                w1 = 10 + (index)*30
             else:
-                w1 = 330 + (index - 2)*120
-            w2 = w1 + 115
-            cropped_img = lics_plate[100:255, w1:w2]
+                w1 = 100 + (index - 2)*30
+            w2 = w1 + 30
+            cropped_img = lics_plate[0:h, w1:w2]
             cropped_img_aug = np.expand_dims(cropped_img, axis=0)
-            # cv2.imshow("crop", cropped_img)
+            cv2.imshow("crop", cropped_img)
+            print(cropped_img.shape)
 
             with self.graph.as_default():
                 try:
@@ -193,7 +211,7 @@ class LicenseReader():
                     y_pred = self.plateModel.predict(cropped_img_aug)[0]
                     plate = plate + self.int_to_char[np.argmax(y_pred)].upper()
                 except Exception as e:
-                    print("plate not found")
+                    print("plate not found", e)
                 
         return pos, plate
 
