@@ -99,12 +99,19 @@ while action !=-1:
         def convert_to_one_hot(Y, C):
             Y = np.eye(C)[Y.reshape(-1)].T
             return Y
-        
-        # cv2.imshow(X_dataset_orig[0,0])
-        # cv2.waitkey(3)
 
+        x_dataset = []
+        for x in X_dataset_orig:
+            x = cv2.cvtColor(x, cv2.COLOR_BGR2HSV)
+            x = cv2.inRange(x, np.array([120,140,90],np.uint8), np.array([120,220,200],np.uint8))
+            x = cv2.merge((x,x,x))
+            x_dataset.append(x)
+            
+
+        x_dataset = np.array(x_dataset)
+        print(x_dataset.shape)
         # Normalize X (images) dataset
-        X_dataset = X_dataset_orig/255.
+        X_dataset = x_dataset/255.
 
         # Convert Y dataset to one-hot encoding
         Y_dataset = convert_to_one_hot(Y_dataset_orig, NUMBER_OF_LABELS).T
@@ -124,10 +131,10 @@ while action !=-1:
         #Defining the model
         conv_model = models.Sequential()
         conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
-                                    input_shape=(65, 65, 3)))
+                                    input_shape=(65, 65,3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
-                                    input_shape=(65, 65, 3)))
+                                    input_shape=(65, 65,3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Flatten())
         conv_model.add(layers.Dropout(0.5))
