@@ -209,10 +209,10 @@ class LicenseReader():
         num_one = lics_plate[0:65,int(w/2)-65:int(w/2)]
         num_two = lics_plate[0:65,int(w/2):int(w/2)+65]
 
-        # letter_one = letter_one/255.
-        # letter_two = letter_two/255.
-        # num_one = num_one/255.
-        # num_two = num_two/255.
+        letter_one = letter_one/255.
+        letter_two = letter_two/255.
+        num_one = num_one/255.
+        num_two = num_two/255.
 
         l1_aug = np.expand_dims(letter_one, axis=0)
         l2_aug = np.expand_dims(letter_two, axis=0)
