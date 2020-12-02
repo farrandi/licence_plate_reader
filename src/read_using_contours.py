@@ -20,7 +20,6 @@ from tensorflow.python.keras.models import load_model
 class LicenseReader():
 
     def __init__(self):
-
         tf.keras.backend.clear_session()
         # define the parking and plate dictionaries
         self.ordered_data_1 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -116,7 +115,7 @@ class LicenseReader():
 
         if screenCnt is None:
             detected = 0
-            print ("No contour detected")
+            # print ("No contour detected")
         else:
             detected = 1
 
@@ -167,6 +166,7 @@ class LicenseReader():
 
     #goes through our CNN to read the parking spot and read plate
     def readPlate(self, img):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         plate = ""
         pos = ""
 
@@ -178,17 +178,19 @@ class LicenseReader():
         img = cv2.resize(img,None,fx=scale_h, fy=scale_w, interpolation = cv2.INTER_CUBIC)
 
         hi,wi,chi = img.shape
-        parking_pic = img[int(0.7*hi)-100:int(0.7*hi),wi-150:wi-10]    
+        parking_pic = img[int(0.75*hi)-100:int(0.75*hi),wi-150:wi-10]
+        parking_pic = parking_pic/255.    
         park_aug = np.expand_dims(parking_pic, axis=0)
 
         with self.graph.as_default():
             set_session(self.sess)
             pos_pred = self.parkModel.predict(park_aug)[0]
-            if np.amax(pos_pred) > 0.8:
+            if np.amax(pos_pred) > 0.5:
                 pos = self.int_to_park[np.argmax(pos_pred)]
         
         ############## predicting the license plate ####################
         lics_plate = img [int(0.8*hi):hi, 0:wi] 
+        # lics_plate = lics_plate/255.
 
         lics_plate = img[hi-70:hi-5,0:int(wi/2)]
         h,w,ch = lics_plate.shape
@@ -200,15 +202,21 @@ class LicenseReader():
         num_one = lics_plate[0:65,int(w/2)-65:int(w/2)]
         num_two = lics_plate[0:65,int(w/2):int(w/2)+65]
 
+        letter_one = letter_one/255.
+        letter_two = letter_two/255.
+        num_one = num_one/255.
+        num_two = num_two/255.
+
         l1_aug = np.expand_dims(letter_one, axis=0)
         l2_aug = np.expand_dims(letter_two, axis=0)
         n1_aug = np.expand_dims(num_one, axis=0)
         n2_aug = np.expand_dims(num_two, axis=0)
 
-        # cv2.imshow("cut lic", letter_one)
-        # cv2.imshow("cut lic", letter_one)
-        # cv2.imshow("cut lic", letter_one)
-        # cv2.imshow("cut lic", letter_one)
+        # cv2.imshow("pos", parking_pic)
+        # cv2.imshow("1", letter_one)
+        # cv2.imshow("2", letter_two)
+        # cv2.imshow("3", num_one)
+        # cv2.imshow("4", num_two)
         # cv2.waitKey(3)
 
         with self.graph.as_default():
@@ -224,7 +232,11 @@ class LicenseReader():
             except Exception as e:
                 print("plate not found", e)
 
+
+        # print(letter_one)
+        # print("aug", l1_aug)
         print(pos,plate)
+
         # check if the plate is in the form [char, char, int, int]
         # for i in range(4):
         #     if i < 2:

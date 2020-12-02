@@ -99,6 +99,9 @@ while action !=-1:
         def convert_to_one_hot(Y, C):
             Y = np.eye(C)[Y.reshape(-1)].T
             return Y
+        
+        # cv2.imshow(X_dataset_orig[0,0])
+        # cv2.waitkey(3)
 
         # Normalize X (images) dataset
         X_dataset = X_dataset_orig/255.
@@ -120,7 +123,7 @@ while action !=-1:
     elif(action == 2):
         #Defining the model
         conv_model = models.Sequential()
-        conv_model.add(layers.Conv2D(32, (3, 3), activation='relu',
+        conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
                                     input_shape=(65, 65, 3)))
         conv_model.add(layers.MaxPooling2D((2, 2)))
         conv_model.add(layers.Conv2D(64, (3, 3), activation='relu',
